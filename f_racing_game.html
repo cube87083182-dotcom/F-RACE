@@ -1,0 +1,3398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>F-RACING</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    background: #0d1628;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    color: #fff;
+    overscroll-behavior: none;
+  }
+  #game-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1;
+    touch-action: none;
+  }
+  button {
+    touch-action: manipulation;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+  }
+  input {
+    user-select: text;
+    -webkit-user-select: text;
+    touch-action: auto;
+  }
+
+  /* Overlay Screens */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 30%, rgba(22, 46, 92, 0.94), rgba(8, 14, 28, 0.98));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: env(safe-area-inset-top, 12px) 14px env(safe-area-inset-bottom, 12px);
+  }
+  .hidden { display: none !important; }
+
+  .title-badge {
+    background: linear-gradient(90deg, #ff9800, #ff3d00);
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+    box-shadow: 0 4px 15px rgba(255, 111, 0, 0.4);
+  }
+  .game-title {
+    font-size: clamp(26px, 5vw, 48px);
+    font-weight: 900;
+    font-style: italic;
+    text-align: center;
+    background: linear-gradient(180deg, #ffffff 20%, #7dd3fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 6px 18px rgba(0, 180, 255, 0.45));
+    margin-bottom: 10px;
+  }
+  .card-box {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    padding: 14px 18px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    max-height: 86vh;
+    overflow-y: auto;
+  }
+  .form-group {
+    margin-bottom: 10px;
+  }
+  .form-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #93c5fd;
+    margin-bottom: 5px;
+  }
+  .nick-input {
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 12px;
+    border: 2px solid rgba(147, 197, 253, 0.35);
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    outline: none;
+  }
+  .nick-input:focus {
+    border-color: #38bdf8;
+  }
+  .mode-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .mode-btn {
+    padding: 9px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-weight: 800;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .mode-btn.active {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: #7dd3fc;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+  }
+  .skin-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .title-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    max-height: 112px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .title-chip {
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .title-chip.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.45));
+    border-color: #fbbf24;
+    color: #fef08a;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);
+  }
+  .title-chip.locked {
+    opacity: 0.52;
+  }
+  .title-badge-inline {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(251, 191, 36, 0.2);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    color: #fde047;
+    font-size: 10px;
+    font-weight: 900;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .shop-section-title {
+    width: 100%;
+    max-width: 960px;
+    font-size: 15px;
+    font-weight: 900;
+    color: #7dd3fc;
+    margin: 14px 0 8px;
+    padding-left: 4px;
+  }
+  .progress-mini-bar {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .progress-mini-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #fbbf24);
+    transition: width 0.2s;
+  }
+  .skin-card {
+    padding: 6px 4px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    font-weight: 800;
+    font-size: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .skin-card.active {
+    background: linear-gradient(135deg, #059669, #10b981);
+    border-color: #6ee7b7;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+  .skin-thumb-img {
+    width: 64px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(2, 6, 23, 0.65);
+    padding: 2px;
+  }
+  .color-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .color-btn {
+    height: 40px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+  .color-btn.active {
+    border-color: #fbbf24;
+    transform: scale(1.06);
+    box-shadow: 0 0 12px #fbbf24;
+  }
+  @keyframes wrapSparkleBtn {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.32); }
+  }
+  .sparkle-wrap {
+    animation: wrapSparkleBtn 1.35s ease-in-out infinite;
+    position: relative;
+  }
+  .sparkle-wrap::after {
+    content: '✨';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 11px;
+    pointer-events: none;
+  }
+
+  .primary-btn {
+    width: 100%;
+    margin-top: 6px;
+    padding: 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 24px rgba(234, 88, 12, 0.45);
+  }
+  .primary-btn:active { transform: scale(0.97); }
+
+  .menu-btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .secondary-btn {
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #7dd3fc;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .controls-tip {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  /* Shop Screen & Track Screen */
+  .sub-overlay {
+    justify-content: flex-start;
+    overflow-y: auto;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-bottom: max(22px, env(safe-area-inset-bottom));
+  }
+  .modal-header {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-left: 12px;
+  }
+  .back-btn {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .shop-grid, .track-grid {
+    width: 100%;
+    max-width: 960px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+  }
+  .shop-card, .track-card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #fff;
+  }
+  .shop-card.owned { border-color: #10b981; }
+  .shop-preview-banner {
+    width: 100%;
+    height: 92px;
+    border-radius: 12px;
+    background: radial-gradient(circle at 50% 40%, #1e293b, #020617);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    overflow: hidden;
+    padding: 6px;
+  }
+  .shop-preview-img {
+    height: 80px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+  }
+  .track-card:hover, .track-card:active {
+    border-color: #38bdf8;
+    background: rgba(30, 41, 59, 0.95);
+  }
+  .buy-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    font-weight: 800;
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .buy-btn.owned {
+    background: rgba(255,255,255,0.1);
+    color: #94a3b8;
+    cursor: default;
+  }
+
+  /* Custom Confirm Modal */
+  .confirm-box {
+    background: rgba(15, 23, 42, 0.96);
+    border: 2px solid rgba(248, 113, 113, 0.5);
+    border-radius: 18px;
+    padding: 20px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  }
+
+  /* HUD */
+  #hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 20;
+  }
+  .hud-top-left {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(16px, env(safe-area-inset-left));
+    background: rgba(15, 23, 42, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(8px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    min-width: 145px;
+  }
+  .rank-display {
+    font-size: 26px;
+    font-weight: 900;
+    font-style: italic;
+    color: #fbbf24;
+    line-height: 1;
+  }
+  .rank-display span { font-size: 13px; color: #cbd5e1; }
+  .hud-sub { font-size: 11px; color: #e2e8f0; margin-top: 3px; font-weight: 700; }
+
+  .hud-top-center {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .item-slot {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 3px solid #38bdf8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  }
+  .item-icon { font-size: 28px; line-height: 1; }
+  .item-label { font-size: 9px; font-weight: 800; color: #bae6fd; margin-top: 2px; }
+
+  .hud-top-right {
+    position: absolute;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  #minimap {
+    width: 104px;
+    height: 104px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+  .hud-btns { display: flex; gap: 6px; pointer-events: auto; }
+  .mini-btn {
+    padding: 5px 9px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .hud-bottom-center {
+    position: absolute;
+    bottom: max(14px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 220px;
+  }
+  .speed-box { font-size: 24px; font-weight: 900; font-style: italic; text-shadow: 0 2px 10px rgba(0,0,0,0.7); }
+  .speed-box small { font-size: 11px; color: #93c5fd; }
+  .gauge-wrap {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38bdf8, #3b82f6, #f59e0b);
+    transition: width 0.05s linear;
+  }
+
+  /* Center Banner & Countdown */
+  #countdown {
+    position: fixed;
+    top: 34%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 72px;
+    font-weight: 900;
+    font-style: italic;
+    color: #fbbf24;
+    text-shadow: 0 8px 30px rgba(0,0,0,0.75);
+    z-index: 30;
+    pointer-events: none;
+  }
+  #event-banner {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+  }
+  #kill-feed {
+    position: fixed;
+    top: 28%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    font-weight: 900;
+    color: #f87171;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+    z-index: 32;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  #rewind-flash {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.2), rgba(2, 132, 199, 0.55));
+    pointer-events: none;
+    opacity: 0;
+    z-index: 25;
+    transition: opacity 0.15s;
+  }
+
+  /* Mobile Touch Controls */
+  #mobile-controls {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 28;
+    touch-action: none;
+  }
+  .steer-pad-group {
+    position: absolute;
+    left: max(16px, env(safe-area-inset-left));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    display: flex;
+    gap: 12px;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .steer-btn {
+    width: 82px;
+    height: 80px;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 2px solid rgba(255, 255, 255, 0.24);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 28px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    transition: transform 0.08s, background 0.08s, border-color 0.08s, color 0.08s;
+  }
+  .steer-btn.pressed {
+    transform: scale(0.93);
+    background: rgba(56, 189, 248, 0.45);
+    border-color: #7dd3fc;
+    color: #38bdf8;
+  }
+
+  .action-pad {
+    position: absolute;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(2, 70px);
+    grid-template-rows: repeat(2, 60px);
+    gap: 8px;
+    pointer-events: auto;
+    touch-action: none;
+  }
+  .touch-btn {
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 2px solid rgba(255, 255, 255, 0.24);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+  .touch-btn.pressed { transform: scale(0.93); background: rgba(56, 189, 248, 0.45); border-color: #7dd3fc; }
+  .btn-use { background: rgba(234, 88, 12, 0.55); border-color: #fdba74; }
+  .btn-drift { background: rgba(2, 132, 199, 0.55); border-color: #7dd3fc; }
+
+  /* Result Table (1st to 10th) */
+  .result-list {
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 235px;
+    overflow-y: auto;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .result-row.me { border-color: #fbbf24; background: rgba(251, 191, 36, 0.18); }
+  .result-racer-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-mini-img {
+    width: 36px;
+    height: 24px;
+    object-fit: contain;
+    background: rgba(2, 6, 23, 0.7);
+    border-radius: 6px;
+    padding: 1px;
+  }
+
+  /* 5x2 Lineup Showcase Overlay with Real Vehicle & Wrap Images */
+  .lineup-grid {
+    width: 100%;
+    max-width: 940px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .lineup-card {
+    background: rgba(15, 23, 42, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    padding: 7px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.48);
+  }
+  .lineup-card.me {
+    border-color: #fbbf24;
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.24), rgba(15, 23, 42, 0.94));
+    box-shadow: 0 0 18px rgba(251, 191, 36, 0.45);
+  }
+  .lineup-img-box {
+    width: 100%;
+    max-width: 112px;
+    height: 66px;
+    background: radial-gradient(circle at 50% 45%, #1e293b, #020617);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .lineup-vehicle-img {
+    width: 104px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
+  }
+  .lineup-wrap-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.85);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+<div id="rewind-flash"></div>
+<div id="countdown" class="hidden">3</div>
+<div id="event-banner"></div>
+<div id="kill-feed"></div>
+
+<!-- 5x2 Racer Lineup Showcase Screen with Images -->
+<div id="lineup-screen" class="overlay hidden" style="z-index: 55;">
+  <div class="title-badge" id="lineup-timer-badge">STARTING LINEUP · 3s</div>
+  <h2 style="font-size:clamp(16px, 2.8vw, 22px);font-weight:900;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,0.6);">🏁 참가 라이더 & 스킨/랩 대열 (5×2)</h2>
+  <div id="lineup-grid" class="lineup-grid"></div>
+</div>
+
+<!-- Start Screen -->
+<div id="start-screen" class="overlay">
+  <div class="title-badge">F-RACING</div>
+  <h1 class="game-title">F-RACING</h1>
+  <div class="card-box">
+    <div class="form-group">
+      <label class="form-label" for="nickname-input">
+        <span>라이더 닉네임 & 장착 칭호</span>
+        <span id="gold-display" style="color:#fbbf24;">🪙 250 G</span>
+      </label>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <span id="equipped-title-preview" class="title-badge-inline" style="font-size:11px;padding:3px 8px;white-space:nowrap;">[초보 레이서]</span>
+        <input id="nickname-input" class="nick-input" type="text" maxlength="10" placeholder="닉네임 입력 (기본: 다오)" />
+      </div>
+      <div id="title-row" class="title-row"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">탈것 스킨 선택</label>
+      <div id="skin-row" class="skin-row"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">차체 컬러 & 랩핑 선택</label>
+      <div id="color-row" class="color-row"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">게임 모드 선택</label>
+      <div class="mode-row">
+        <button id="mode-item" class="mode-btn active" type="button">🎁 아이템전</button>
+        <button id="mode-speed" class="mode-btn" type="button">⚡ 스피드전</button>
+      </div>
+    </div>
+
+    <button id="open-tracks-btn" class="primary-btn" type="button">플레이 (10개 트랙 선택)</button>
+    <div class="menu-btn-row">
+      <button id="open-shop-btn" class="secondary-btn" type="button">🛒 상점 (스킨/랩 번들)</button>
+      <button id="reset-data-btn" class="secondary-btn" style="color:#f87171;border-color:rgba(248,113,113,0.4);" type="button">🔄 데이터 초기화</button>
+    </div>
+    <div class="controls-tip">
+      10인 대전 · 3바퀴 완주 · 벽 충돌 시 즉시 도로 중앙 복귀<br/>
+      PC: 방향키/WASD · Shift 드리프트 · Ctrl/Space 부스터·아이템 · R 복귀
+    </div>
+  </div>
+</div>
+
+<!-- Custom Reset Confirmation Modal -->
+<div id="reset-confirm-modal" class="overlay hidden" style="z-index: 70;">
+  <div class="confirm-box">
+    <h3 style="font-size:17px;font-weight:900;margin-bottom:8px;color:#f87171;">⚠️ 데이터 초기화</h3>
+    <p style="font-size:13px;color:#cbd5e1;line-height:1.5;margin-bottom:16px;">모든 보유 골드와 구매한 스킨·랩 번들 데이터를 초기 상태(250G)로 되돌리시겠습니까?</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button id="confirm-reset-cancel" class="back-btn" type="button" style="padding:10px;">취소</button>
+      <button id="confirm-reset-ok" class="buy-btn" type="button" style="margin-top:0;background:linear-gradient(135deg,#ef4444,#b91c1c);">초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shop Screen -->
+<div id="shop-screen" class="overlay sub-overlay hidden">
+  <div class="modal-header">
+    <button id="close-shop-btn" class="back-btn" type="button">← 뒤로</button>
+    <h2 style="font-size:18px;font-weight:900;">🛒 스킨 · 랩 번들 · 칭호 상점</h2>
+    <span id="shop-gold" style="font-weight:900;color:#fbbf24;">250 G</span>
+  </div>
+  <div class="shop-section-title">🏎️ 탈것 스킨 & 컬러·랩 번들</div>
+  <div id="shop-grid" class="shop-grid"></div>
+  <div class="shop-section-title">🏅 라이더 칭호 도감 & 상점</div>
+  <div id="title-shop-grid" class="shop-grid"></div>
+</div>
+
+<!-- Track Selection Screen -->
+<div id="track-screen" class="overlay sub-overlay hidden">
+  <div class="modal-header">
+    <button id="back-start-btn" class="back-btn" type="button">← 뒤로</button>
+    <h2 style="font-size:18px;font-weight:900;">트랙 선택 (10종 · 10인 대전)</h2>
+    <div style="width:50px;"></div>
+  </div>
+  <div id="track-grid" class="track-grid"></div>
+</div>
+
+<!-- Result Screen (1st to 10th) -->
+<div id="result-screen" class="overlay hidden">
+  <div class="card-box" style="max-width:520px;">
+    <div class="title-badge" style="display:inline-block;">FINISH!</div>
+    <h2 id="result-title" style="font-size:24px;font-weight:900;margin-bottom:2px;">레이스 완주!</h2>
+    <p id="result-track-name" style="font-size:12px;color:#93c5fd;"></p>
+    <div id="result-reward" style="font-size:14px;font-weight:900;color:#fbbf24;margin-top:4px;"></div>
+    <div id="result-list" class="result-list"></div>
+    <button id="retry-btn" class="primary-btn" type="button">다시 달리기</button>
+    <button id="change-track-btn" class="secondary-btn" style="width:100%;margin-top:6px;padding:11px;" type="button">다른 트랙 고르기</button>
+  </div>
+</div>
+
+<!-- In-Game HUD -->
+<div id="hud" class="hidden">
+  <div class="hud-top-left">
+    <div class="rank-display" id="hud-rank">1<span>/10</span></div>
+    <div class="hud-sub" id="hud-nick">다오 · LAP 1/3</div>
+    <div class="hud-sub" id="hud-time" style="color:#7dd3fc;">00:00.00</div>
+  </div>
+
+  <div class="hud-top-center">
+    <div class="item-slot" id="item-slot">
+      <div class="item-icon" id="item-icon">❓</div>
+      <div class="item-label" id="item-label">EMPTY</div>
+    </div>
+  </div>
+
+  <div class="hud-top-right">
+    <canvas id="minimap" width="104" height="104"></canvas>
+    <div class="hud-btns">
+      <button id="toggle-pad-btn" class="mini-btn" type="button">🎮 패드</button>
+      <button id="home-btn" class="mini-btn" type="button">🏠 메뉴</button>
+    </div>
+  </div>
+
+  <div class="hud-bottom-center">
+    <div class="speed-box"><span id="hud-speed">0</span> <small>km/h</small></div>
+    <div class="gauge-wrap">
+      <div class="gauge-fill" id="boost-gauge"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile Touch Controls -->
+<div id="mobile-controls" class="hidden">
+  <div class="steer-pad-group">
+    <button id="btn-steer-left" class="steer-btn" type="button" aria-label="좌회전">◀</button>
+    <button id="btn-steer-right" class="steer-btn" type="button" aria-label="우회전">▶</button>
+  </div>
+  <div class="action-pad">
+    <button id="btn-reset" class="touch-btn" type="button">🔄<span style="font-size:9px;">복귀</span></button>
+    <button id="btn-use" class="touch-btn btn-use" type="button">🔥<span style="font-size:9px;">ITEM/N2O</span></button>
+    <button id="btn-brake" class="touch-btn" type="button">🛑<span style="font-size:9px;">감속</span></button>
+    <button id="btn-drift" class="touch-btn btn-drift" type="button">💨<span style="font-size:9px;">DRIFT</span></button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  // ==========================================
+  // 0. 고화질 스킨 & 랩핑 일러스트 이미지 생성기 (Data URI PNG)
+  // ==========================================
+  const vehicleImageCache = {};
+
+  function getVehicleImageURL(skinId, colorHex) {
+    const cacheKey = `${skinId}_${colorHex}`;
+    if (vehicleImageCache[cacheKey]) return vehicleImageCache[cacheKey];
+
+    const c = document.createElement('canvas');
+    c.width = 220;
+    c.height = 136;
+    const ctx = c.getContext('2d');
+
+    function createFill(x1, y1, x2, y2) {
+      if (colorHex === 'gold_wrap') {
+        const g = ctx.createLinearGradient(x1, y1, x2, y2);
+        g.addColorStop(0, '#fef9c3');
+        g.addColorStop(0.35, '#fde047');
+        g.addColorStop(0.7, '#f59e0b');
+        g.addColorStop(1, '#fef08a');
+        return g;
+      }
+      if (colorHex === 'silver_wrap') {
+        const g = ctx.createLinearGradient(x1, y1, x2, y2);
+        g.addColorStop(0, '#ffffff');
+        g.addColorStop(0.4, '#e5e7eb');
+        g.addColorStop(0.75, '#94a3b8');
+        g.addColorStop(1, '#f8fafc');
+        return g;
+      }
+      if (colorHex === 'rainbow') {
+        const g = ctx.createLinearGradient(x1, y1, x2, y2);
+        g.addColorStop(0, '#ef4444');
+        g.addColorStop(0.2, '#f97316');
+        g.addColorStop(0.4, '#eab308');
+        g.addColorStop(0.6, '#22c55e');
+        g.addColorStop(0.8, '#3b82f6');
+        g.addColorStop(1, '#a855f7');
+        return g;
+      }
+      const g = ctx.createLinearGradient(x1, y1, x2, y2);
+      g.addColorStop(0, colorHex);
+      g.addColorStop(1, '#0f172a');
+      return g;
+    }
+
+    function drawWheel(wx, wy, r) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(wx, wy, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#64748b';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(wx, wy, r * 0.45, 0, Math.PI * 2);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSparkles() {
+      if (colorHex !== 'gold_wrap' && colorHex !== 'silver_wrap' && colorHex !== 'rainbow') return;
+      const pts = [[54, 42, 8], [162, 36, 9], [115, 28, 7], [178, 74, 6], [42, 78, 6]];
+      pts.forEach(([sx, sy, sz]) => {
+        ctx.save();
+        ctx.translate(sx, sy);
+        ctx.fillStyle = colorHex === 'gold_wrap' ? '#fef08a' : '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(0, -sz);
+        ctx.quadraticCurveTo(0, 0, sz, 0);
+        ctx.quadraticCurveTo(0, 0, 0, sz);
+        ctx.quadraticCurveTo(0, 0, -sz, 0);
+        ctx.quadraticCurveTo(0, 0, 0, -sz);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    ctx.beginPath();
+    ctx.ellipse(110, 114, 72, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const mainFill = createFill(35, 30, 185, 105);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    if (skinId === 'bike') {
+      drawWheel(64, 92, 20);
+      drawWheel(156, 92, 20);
+      ctx.strokeStyle = mainFill;
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(64, 92);
+      ctx.lineTo(100, 62);
+      ctx.lineTo(142, 62);
+      ctx.lineTo(156, 92);
+      ctx.moveTo(100, 62);
+      ctx.lineTo(94, 48);
+      ctx.moveTo(142, 62);
+      ctx.lineTo(136, 42);
+      ctx.stroke();
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(82, 44, 22, 7);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(128, 40);
+      ctx.lineTo(146, 40);
+      ctx.stroke();
+
+    } else if (skinId === 'skate') {
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.roundRect(92, 46, 34, 34, 10);
+      ctx.fill();
+      ctx.fillStyle = '#fde68a';
+      ctx.beginPath();
+      ctx.arc(112, 30, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.arc(111, 28, 15, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(114, 24, 12, 6);
+      ctx.strokeStyle = mainFill;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(96, 54);
+      ctx.lineTo(74, 68);
+      ctx.moveTo(122, 54);
+      ctx.lineTo(148, 48);
+      ctx.stroke();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 9;
+      ctx.beginPath();
+      ctx.moveTo(100, 78);
+      ctx.lineTo(84, 100);
+      ctx.moveTo(116, 78);
+      ctx.lineTo(136, 100);
+      ctx.stroke();
+      ctx.fillStyle = mainFill;
+      ctx.fillRect(68, 97, 30, 9);
+      ctx.fillRect(122, 97, 30, 9);
+      [72, 82, 92, 126, 136, 146].forEach(wx => {
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(wx, 109, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+    } else if (skinId === 'motorbike') {
+      drawWheel(62, 94, 19);
+      drawWheel(160, 94, 19);
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.moveTo(46, 82);
+      ctx.lineTo(84, 56);
+      ctx.lineTo(136, 50);
+      ctx.lineTo(176, 76);
+      ctx.lineTo(154, 92);
+      ctx.lineTo(66, 92);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.moveTo(124, 52);
+      ctx.lineTo(146, 36);
+      ctx.lineTo(154, 54);
+      ctx.closePath();
+      ctx.fill();
+
+    } else if (skinId === 'car') {
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.moveTo(32, 88);
+      ctx.lineTo(44, 64);
+      ctx.lineTo(82, 42);
+      ctx.lineTo(142, 42);
+      ctx.lineTo(186, 66);
+      ctx.lineTo(190, 88);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(28, 52, 18, 7);
+      ctx.fillRect(36, 58, 6, 10);
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.moveTo(86, 47);
+      ctx.lineTo(136, 47);
+      ctx.lineTo(156, 63);
+      ctx.lineTo(76, 63);
+      ctx.closePath();
+      ctx.fill();
+      drawWheel(66, 92, 17);
+      drawWheel(156, 92, 17);
+
+    } else if (skinId === 'truck') {
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.roundRect(34, 36, 96, 54, 8);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(132, 48, 52, 42, 8);
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(154, 54, 24, 18);
+      drawWheel(60, 94, 16);
+      drawWheel(104, 94, 16);
+      drawWheel(160, 94, 16);
+
+    } else if (skinId === 'train') {
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.roundRect(36, 34, 54, 56, 6);
+      ctx.fill();
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.roundRect(86, 48, 92, 40, 10);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(150, 28, 14, 22);
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.moveTo(176, 68);
+      ctx.lineTo(194, 90);
+      ctx.lineTo(176, 90);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(48, 44, 26, 20);
+      drawWheel(62, 94, 16);
+      drawWheel(108, 94, 16);
+      drawWheel(154, 94, 16);
+
+    } else if (skinId === 'ufo') {
+      const beamGrad = ctx.createLinearGradient(110, 76, 110, 114);
+      beamGrad.addColorStop(0, 'rgba(56, 189, 248, 0.55)');
+      beamGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+      ctx.fillStyle = beamGrad;
+      ctx.beginPath();
+      ctx.moveTo(82, 76);
+      ctx.lineTo(138, 76);
+      ctx.lineTo(156, 114);
+      ctx.lineTo(64, 114);
+      ctx.closePath();
+      ctx.fill();
+
+      const domeGrad = ctx.createRadialGradient(104, 42, 4, 110, 50, 32);
+      domeGrad.addColorStop(0, 'rgba(224, 242, 254, 0.95)');
+      domeGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.65)');
+      domeGrad.addColorStop(1, 'rgba(2, 132, 199, 0.45)');
+      ctx.fillStyle = domeGrad;
+      ctx.beginPath();
+      ctx.arc(110, 58, 30, Math.PI, 0);
+      ctx.fill();
+      ctx.strokeStyle = '#7dd3fc';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.ellipse(110, 74, 46, 11, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.ellipse(110, 64, 76, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const lightColors = ['#38bdf8', '#facc15', '#f43f5e', '#4ade80', '#38bdf8', '#facc15', '#f43f5e'];
+      [-56, -38, -19, 0, 19, 38, 56].forEach((lx, idx) => {
+        ctx.fillStyle = lightColors[idx % lightColors.length];
+        ctx.beginPath();
+        ctx.arc(110 + lx, 64 + Math.cos((lx / 76) * 1.2) * 4, 3.6, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+    } else {
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.arc(106, 44, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.arc(105, 41, 16, Math.PI, 0);
+      ctx.fill();
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(108, 37, 13, 6);
+
+      ctx.fillStyle = mainFill;
+      ctx.beginPath();
+      ctx.moveTo(36, 86);
+      ctx.lineTo(44, 62);
+      ctx.lineTo(84, 62);
+      ctx.lineTo(118, 56);
+      ctx.lineTo(182, 68);
+      ctx.lineTo(186, 88);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillRect(30, 50, 20, 7);
+      ctx.fillRect(38, 56, 6, 10);
+
+      drawWheel(64, 92, 17);
+      drawWheel(156, 92, 17);
+    }
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(56, 64);
+    ctx.lineTo(164, 64);
+    ctx.stroke();
+
+    drawSparkles();
+
+    const url = c.toDataURL('image/png');
+    vehicleImageCache[cacheKey] = url;
+    return url;
+  }
+
+  // ==========================================
+  // 1. 안전 저장소 및 데이터 관리
+  // ==========================================
+  const STORAGE_KEY = 'f_racing_save_v3';
+  const memoryStorage = {};
+  const safeStorage = {
+    get(key) {
+      try { return localStorage.getItem(key); } catch (e) { return memoryStorage[key] || null; }
+    },
+    set(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) { memoryStorage[key] = val; }
+    }
+  };
+
+  function getDefaultSaveData() {
+    return {
+      gold: 250,
+      nickname: '다오',
+      selectedSkin: 'default',
+      selectedColor: '#ef4444',
+      ownedSkins: ['default'],
+      ownedColors: ['#ef4444', '#3b82f6', '#22c55e', '#facc15'],
+      selectedTitle: 'rookie',
+      unlockedTitles: ['rookie'],
+      stats: {
+        totalRaces: 0,
+        wins1st: 0,
+        podiums: 0,
+        totalDrifts: 0,
+        itemHits: 0
+      }
+    };
+  }
+
+  let saveData = getDefaultSaveData();
+
+  function loadSaveData() {
+    try {
+      const raw = safeStorage.get(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        saveData = {
+          ...getDefaultSaveData(),
+          ...parsed,
+          stats: { ...getDefaultSaveData().stats, ...(parsed.stats || {}) }
+        };
+      }
+    } catch (e) {}
+  }
+  function writeSaveData() {
+    try {
+      safeStorage.set(STORAGE_KEY, JSON.stringify(saveData));
+    } catch (e) {}
+  }
+  loadSaveData();
+
+  // ==========================================
+  // 2. 10개 트랙, 상점 및 칭호 데이터 정의
+  // ==========================================
+  const TRACKS = [
+    {
+      id: 0,
+      name: "01. 빌리지 고가의 질주",
+      stars: "★☆☆☆☆",
+      desc: "맑은 하늘 아래 시원한 직선과 완만한 코너가 어우러진 기본 트랙",
+      roadColor: 0x334155, railColor: 0xef4444, skyColor: 0x38bdf8, fogColor: 0x7dd3fc, groundColor: 0x22c55e, grip: 1.0,
+      pts: [[0,0,0], [0,0,-140], [70,6,-240], [180,10,-240], [240,4,-140], [200,0,-30], [250,8,80], [160,12,170], [40,6,150], [-20,0,80]]
+    },
+    {
+      id: 1,
+      name: "02. 사막 빙글빙글 공사장",
+      stars: "★★☆☆☆",
+      desc: "급격한 유턴과 헤어핀 구간이 연속되는 황토빛 사막 서킷",
+      roadColor: 0x78350f, railColor: 0xf59e0b, skyColor: 0xfbbf24, fogColor: 0xfde68a, groundColor: 0xd97706, grip: 0.96,
+      pts: [[0,0,0], [0,0,-160], [110,4,-220], [130,8,-110], [240,12,-130], [260,6,30], [140,2,40], [170,0,160], [30,0,170], [-20,0,90]]
+    },
+    {
+      id: 2,
+      name: "03. 아이스 펭귄 해안",
+      stars: "★★★☆☆",
+      desc: "빙판 도로 특유의 미끄러운 드리프트 감각을 즐기는 설원 트랙",
+      roadColor: 0x0284c7, railColor: 0xe0f2fe, skyColor: 0xbae6fd, fogColor: 0xe0f2fe, groundColor: 0xf8fafc, grip: 0.86,
+      pts: [[0,0,0], [0,0,-150], [-90,5,-230], [-200,10,-160], [-140,6,-40], [-230,2,70], [-130,8,180], [20,12,160], [70,4,80]]
+    },
+    {
+      id: 3,
+      name: "04. 포레스트 통나무 산길",
+      stars: "★★☆☆☆",
+      desc: "푸른 숲속을 굽이굽이 달리는 리드미컬한 S자 와인딩 코스",
+      roadColor: 0x5c4033, railColor: 0x84cc16, skyColor: 0x34d399, fogColor: 0xa7f3d0, groundColor: 0x15803d, grip: 0.98,
+      pts: [[0,0,0], [0,2,-130], [90,8,-190], [40,12,-290], [170,15,-310], [230,8,-190], [150,4,-90], [220,2,40], [110,0,130], [10,0,90]]
+    },
+    {
+      id: 4,
+      name: "05. 코리아 서울 야경 질주",
+      stars: "★★★☆☆",
+      desc: "네온 가드레일이 빛나는 도심 속 초고속 야간 스트리트 트랙",
+      roadColor: 0x1e293b, railColor: 0xec4899, skyColor: 0x090d16, fogColor: 0x1e1b4b, groundColor: 0x0f172a, grip: 1.02,
+      pts: [[0,0,0], [0,0,-200], [120,0,-280], [260,6,-240], [280,10,-80], [180,4,-20], [240,0,120], [100,0,190], [-20,0,120]]
+    },
+    {
+      id: 5,
+      name: "06. 문힐시티 히든 서킷",
+      stars: "★★★★☆",
+      desc: "달빛 아래 연속 직각 코너와 고저차가 결합된 테크니컬 서킷",
+      roadColor: 0x312e81, railColor: 0x38bdf8, skyColor: 0x1e1b4b, fogColor: 0x312e81, groundColor: 0x1e293b, grip: 0.97,
+      pts: [[0,0,0], [0,4,-150], [-120,10,-160], [-130,14,-280], [40,16,-300], [60,8,-170], [190,4,-170], [200,0,30], [80,0,140], [-10,0,90]]
+    },
+    {
+      id: 6,
+      name: "07. 해적 숨겨진 보물섬",
+      stars: "★★★☆☆",
+      desc: "에메랄드 바다 위 해변과 절벽 다리를 건너는 모험 트랙",
+      roadColor: 0xca8a04, railColor: 0xdc2626, skyColor: 0x0ea5e9, fogColor: 0x7dd3fc, groundColor: 0x0284c7, grip: 0.95,
+      pts: [[0,0,0], [0,2,-140], [100,12,-230], [220,14,-180], [250,4,-50], [140,2,20], [190,10,140], [50,12,190], [-40,4,110]]
+    },
+    {
+      id: 7,
+      name: "08. 광산 꼬불꼬불 다운힐",
+      stars: "★★★★☆",
+      desc: "붉은 협곡 사이로 급커브가 연달아 등장하는 고난도 광산 트랙",
+      roadColor: 0x451a03, railColor: 0xf97316, skyColor: 0x7c2d12, fogColor: 0x9a3412, groundColor: 0x431407, grip: 0.94,
+      pts: [[0,12,0], [0,10,-140], [110,8,-180], [40,6,-260], [180,4,-300], [240,2,-170], [130,0,-90], [220,0,50], [90,4,150], [-20,8,90]]
+    },
+    {
+      id: 8,
+      name: "09. 차이나 서안 병마용",
+      stars: "★★★☆☆",
+      desc: "웅장한 직선 활주로와 붉은 성벽 코너가 돋보이는 유적 서킷",
+      roadColor: 0x57534e, railColor: 0xe11d48, skyColor: 0xfdba74, fogColor: 0xfed7aa, groundColor: 0xa8a29e, grip: 0.99,
+      pts: [[0,0,0], [0,0,-210], [150,4,-270], [270,8,-160], [270,8,20], [150,4,130], [50,0,130], [-20,0,80]]
+    },
+    {
+      id: 9,
+      name: "10. 노르테유 익스프레스",
+      stars: "★★★★★",
+      desc: "입체 고가 교차와 초고속 헤어핀이 결합된 최고 난이도 우주 트랙",
+      roadColor: 0x0f172a, railColor: 0xa855f7, skyColor: 0x030712, fogColor: 0x1e1b4b, groundColor: 0x090d16, grip: 0.96,
+      pts: [[0,0,0], [0,0,-170], [140,16,-250], [260,18,-120], [100,14,-40], [-60,4,-110], [-160,0,20], [-60,8,160], [120,12,160], [60,4,70]]
+    }
+  ];
+
+  const SHOP_SKINS = [
+    { id: 'bike', name: '🚲 자전거', price: 80, desc: '초경량 2륜 튜브 프레임 바이크' },
+    { id: 'ufo', name: '🛸 UFO', price: 80, desc: '공중을 부유하며 반짝이는 외계 비행접시 스킨' },
+    { id: 'skate', name: '🛼 스케이트', price: 90, desc: '사람이 인라인 스케이트를 신고 팔다리를 저으며 질주!' },
+    { id: 'motorbike', name: '🏍️ 오토바이', price: 100, desc: '고속 코너링 레이싱 바이크' },
+    { id: 'car', name: '🚘 스포츠카', price: 120, desc: '날렵한 쿠페 스타일 슈퍼카' },
+    { id: 'truck', name: '🚚 트럭', price: 150, desc: '묵직한 6륜 헤비 카고 트럭' },
+    { id: 'train', name: '🚂 기차', price: 200, desc: '증기 기관차 스타일의 중장비 스킨' }
+  ];
+
+  const TITLES = [
+    {
+      id: 'rookie',
+      name: '초보 레이서',
+      desc: 'F-RACING에 첫 발을 내딛은 기본 칭호',
+      type: 'default',
+      getProgress: () => ({ cur: 1, max: 1 })
+    },
+    {
+      id: 'drift_master',
+      name: '드리프트 장인',
+      desc: '누적 드리프트 부스트 10회 달성 시 자동 해금',
+      type: 'mission',
+      getProgress: () => ({ cur: Math.min(saveData.stats.totalDrifts, 10), max: 10 })
+    },
+    {
+      id: 'track_ruler',
+      name: '트랙의 지배자',
+      desc: '레이스 1위 우승 1회 달성 시 자동 해금',
+      type: 'mission',
+      getProgress: () => ({ cur: Math.min(saveData.stats.wins1st, 1), max: 1 })
+    },
+    {
+      id: 'podium_regular',
+      name: '포디움 단골',
+      desc: '3위 이내 입상 3회 달성 시 자동 해금',
+      type: 'mission',
+      getProgress: () => ({ cur: Math.min(saveData.stats.podiums, 3), max: 3 })
+    },
+    {
+      id: 'speed_instinct',
+      name: '질주 본능',
+      desc: '총 레이스 완주 5회 달성 시 자동 해금',
+      type: 'mission',
+      getProgress: () => ({ cur: Math.min(saveData.stats.totalRaces, 5), max: 5 })
+    },
+    {
+      id: 'collector',
+      name: '컬렉터',
+      desc: '탈것 스킨 3종 이상 보유 시 자동 해금',
+      type: 'mission',
+      getProgress: () => ({ cur: Math.min(saveData.ownedSkins.length, 3), max: 3 })
+    },
+    {
+      id: 'gold_rush',
+      name: '골드 러시',
+      desc: '황금빛 명예를 상징하는 상점 전용 칭호',
+      type: 'shop',
+      price: 60,
+      getProgress: () => ({ cur: saveData.unlockedTitles.includes('gold_rush') ? 1 : 0, max: 1 })
+    },
+    {
+      id: 'space_conqueror',
+      name: '우주 정복자',
+      desc: 'UFO 스킨 보유 시 자동 해금 (또는 상점 100 G 구매)',
+      type: 'hybrid',
+      price: 100,
+      getProgress: () => ({ cur: saveData.ownedSkins.includes('ufo') || saveData.unlockedTitles.includes('space_conqueror') ? 1 : 0, max: 1 })
+    }
+  ];
+
+  function getTitleObj(titleId) {
+    return TITLES.find(t => t.id === titleId) || TITLES[0];
+  }
+
+  function checkAndUnlockTitles(silent = false) {
+    const newlyUnlocked = [];
+    TITLES.forEach(t => {
+      if (saveData.unlockedTitles.includes(t.id)) return;
+      const prog = t.getProgress();
+      if (prog.cur >= prog.max) {
+        saveData.unlockedTitles.push(t.id);
+        newlyUnlocked.push(t);
+      }
+    });
+    if (newlyUnlocked.length > 0) {
+      writeSaveData();
+      if (!silent) {
+        sfx.finish();
+        const names = newlyUnlocked.map(t => `[${t.name}]`).join(', ');
+        showBanner(`🏅 새 칭호 획득: ${names}!`, '#fde047');
+      }
+    }
+    return newlyUnlocked;
+  }
+
+  const SHOP_BUNDLES = [
+    { id: 'monotone', type: 'colors', name: '⬛⬜🩶 모노톤 컬러 번들', price: 50, colors: ['#111827', '#f8fafc', '#6b7280'], desc: '검정, 하양, 회색 차체 컬러 해금' },
+    { id: 'goldsilver', type: 'colors', name: '🥇🥈 골드 실버 랩 번들', price: 70, colors: ['gold_wrap', 'silver_wrap'], desc: '반짝이는 밝은 노랑 골드 & 밝은 회색 실버 랩 해금' },
+    { id: 'rainbow', type: 'colors', name: '🌈 레인보우 무지개 번들', price: 80, colors: ['rainbow'], desc: '실시간 무지개빛 순환 차체 컬러 해금' }
+  ];
+
+  const BASE_COLORS = [
+    { hex: '#ef4444', name: '레드' },
+    { hex: '#3b82f6', name: '블루' },
+    { hex: '#22c55e', name: '그린' },
+    { hex: '#facc15', name: '옐로' }
+  ];
+
+  // ==========================================
+  // 3. Web Audio 합성 효과음 엔진
+  // ==========================================
+  class SoundEngine {
+    constructor() { this.ctx = null; }
+    init() {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+    }
+    tone(freq, type = 'sine', dur = 0.15, vol = 0.12, slideTo = null) {
+      if (!this.ctx) return;
+      try {
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, now + dur);
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      } catch (e) {}
+    }
+    beep(high = false) { this.tone(high ? 880 : 440, 'triangle', 0.18, 0.15); }
+    boost() { this.tone(180, 'sawtooth', 0.45, 0.14, 620); }
+    itemGet() { this.tone(520, 'sine', 0.12, 0.13, 980); }
+    hit() { this.tone(190, 'square', 0.3, 0.15, 75); }
+    shock() { this.tone(920, 'sawtooth', 0.35, 0.18, 120); }
+    finish() {
+      this.tone(523, 'triangle', 0.15, 0.15);
+      setTimeout(() => this.tone(659, 'triangle', 0.15, 0.15), 140);
+      setTimeout(() => this.tone(784, 'triangle', 0.35, 0.18), 280);
+    }
+  }
+  const sfx = new SoundEngine();
+
+  // ==========================================
+  // 4. UI 렌더링 (스킨/컬러/상점 이미지 포함) 및 메뉴 제어
+  // ==========================================
+  let selectedMode = 'item';
+  let currentTrack = TRACKS[0];
+  let padForced = null;
+
+  const nickInput = document.getElementById('nickname-input');
+  nickInput.value = saveData.nickname;
+
+  function updateMenuUI() {
+    checkAndUnlockTitles(true);
+    document.getElementById('gold-display').textContent = `🪙 ${saveData.gold} G`;
+    document.getElementById('shop-gold').textContent = `${saveData.gold} G`;
+
+    const currentTitleObj = getTitleObj(saveData.selectedTitle);
+    document.getElementById('equipped-title-preview').textContent = `[${currentTitleObj.name}]`;
+
+    const titleRow = document.getElementById('title-row');
+    titleRow.innerHTML = '';
+    TITLES.forEach(t => {
+      const unlocked = saveData.unlockedTitles.includes(t.id);
+      const isSelected = saveData.selectedTitle === t.id;
+      const prog = t.getProgress();
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'title-chip' + (isSelected ? ' active' : '') + (!unlocked ? ' locked' : '');
+      const statusText = unlocked
+        ? (isSelected ? '★ 장착 중' : '해금 완료')
+        : (t.type === 'shop' ? `상점 ${t.price}G` : `진행 ${prog.cur}/${prog.max}`);
+      chip.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">
+          <span>${unlocked ? '🏅' : '🔒'} [${t.name}]</span>
+          <span style="font-size:9px;color:${isSelected ? '#fbbf24' : (unlocked ? '#6ee7b7' : '#94a3b8')};">${statusText}</span>
+        </div>
+        <div style="font-size:9px;color:#94a3b8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.desc}</div>
+      `;
+      chip.addEventListener('click', () => {
+        if (unlocked) {
+          saveData.selectedTitle = t.id;
+          writeSaveData();
+          updateMenuUI();
+          showBanner(`🏅 칭호 [${t.name}] 장착!`, '#fbbf24');
+        } else {
+          showBanner(`미해금 칭호입니다: ${t.desc}`, '#f87171');
+        }
+      });
+      titleRow.appendChild(chip);
+    });
+
+    const skinRow = document.getElementById('skin-row');
+    skinRow.innerHTML = '';
+    const allSkins = [{ id: 'default', name: '🏎️ 기본' }, ...SHOP_SKINS];
+    allSkins.forEach(sk => {
+      const owned = saveData.ownedSkins.includes(sk.id);
+      const imgUrl = getVehicleImageURL(sk.id, saveData.selectedColor);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'skin-card' + (saveData.selectedSkin === sk.id ? ' active' : '');
+      btn.innerHTML = `
+        <img class="skin-thumb-img" src="${imgUrl}" alt="${sk.name}" />
+        <div>${sk.name}</div>
+        <span style="font-size:9px;color:${owned ? '#6ee7b7' : '#94a3b8'}">${owned ? (saveData.selectedSkin === sk.id ? '장착 중' : '보유') : '미보유'}</span>
+      `;
+      btn.addEventListener('click', () => {
+        if (owned) {
+          saveData.selectedSkin = sk.id;
+          writeSaveData();
+          updateMenuUI();
+          rebuildLobbyPreview();
+        } else {
+          showBanner('상점에서 먼저 구매해주세요!', '#f87171');
+        }
+      });
+      skinRow.appendChild(btn);
+    });
+
+    const colorRow = document.getElementById('color-row');
+    colorRow.innerHTML = '';
+    const availableColors = [...BASE_COLORS];
+    if (saveData.ownedColors.includes('#111827')) {
+      availableColors.push({ hex: '#111827', name: '블랙' }, { hex: '#f8fafc', name: '화이트' }, { hex: '#6b7280', name: '그레이' });
+    }
+    if (saveData.ownedColors.includes('gold_wrap')) {
+      availableColors.push({ hex: 'gold_wrap', name: '골드랩' }, { hex: 'silver_wrap', name: '실버랩' });
+    }
+    if (saveData.ownedColors.includes('rainbow')) {
+      availableColors.push({ hex: 'rainbow', name: '무지개' });
+    }
+
+    availableColors.forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'color-btn' + (saveData.selectedColor === c.hex ? ' active' : '');
+      btn.title = c.name;
+      btn.textContent = c.name;
+      if (c.hex === 'rainbow') {
+        btn.style.background = 'linear-gradient(135deg, red, orange, yellow, green, blue, purple)';
+        btn.classList.add('sparkle-wrap');
+      } else if (c.hex === 'gold_wrap') {
+        btn.style.background = 'linear-gradient(135deg, #fef9c3 0%, #fde047 50%, #facc15 100%)';
+        btn.style.color = '#713f12';
+        btn.style.textShadow = 'none';
+        btn.classList.add('sparkle-wrap');
+      } else if (c.hex === 'silver_wrap') {
+        btn.style.background = 'linear-gradient(135deg, #ffffff 0%, #e5e7eb 55%, #cbd5e1 100%)';
+        btn.style.color = '#1e293b';
+        btn.style.textShadow = 'none';
+        btn.classList.add('sparkle-wrap');
+      } else {
+        btn.style.background = c.hex;
+        if (c.hex === '#f8fafc' || c.hex === '#facc15') {
+          btn.style.color = '#0f172a';
+          btn.style.textShadow = 'none';
+        }
+      }
+      btn.addEventListener('click', () => {
+        saveData.selectedColor = c.hex;
+        writeSaveData();
+        updateMenuUI();
+        rebuildLobbyPreview();
+      });
+      colorRow.appendChild(btn);
+    });
+
+    const shopGrid = document.getElementById('shop-grid');
+    shopGrid.innerHTML = '';
+    SHOP_SKINS.forEach(sk => {
+      const owned = saveData.ownedSkins.includes(sk.id);
+      const previewUrl = getVehicleImageURL(sk.id, saveData.selectedColor);
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (owned ? ' owned' : '');
+      card.innerHTML = `
+        <div class="shop-preview-banner">
+          <img class="shop-preview-img" src="${previewUrl}" alt="${sk.name}" />
+        </div>
+        <div style="font-weight:900;font-size:15px;">${sk.name}</div>
+        <div style="font-size:12px;color:#94a3b8;">${sk.desc}</div>
+        <div style="font-size:13px;font-weight:900;color:#fbbf24;margin-top:auto;">🪙 ${sk.price} G</div>
+        <button class="buy-btn ${owned ? 'owned' : ''}" type="button">${owned ? '보유 중' : '구매하기'}</button>
+      `;
+      card.querySelector('button').addEventListener('click', () => {
+        if (!owned) {
+          if (saveData.gold >= sk.price) {
+            saveData.gold -= sk.price;
+            saveData.ownedSkins.push(sk.id);
+            saveData.selectedSkin = sk.id;
+            const unlockedNow = checkAndUnlockTitles(true);
+            writeSaveData();
+            updateMenuUI();
+            rebuildLobbyPreview();
+            sfx.finish();
+            if (unlockedNow.length > 0) {
+              showBanner(`🎉 ${sk.name} 구매 & 🏅 [${unlockedNow[0].name}] 칭호 획득!`, '#fde047');
+            } else {
+              showBanner(`🎉 ${sk.name} 구매 완료!`, '#10b981');
+            }
+          } else {
+            showBanner('골드가 부족합니다!', '#f87171');
+          }
+        }
+      });
+      shopGrid.appendChild(card);
+    });
+
+    SHOP_BUNDLES.forEach(b => {
+      const owned = b.type === 'colors' && saveData.ownedColors.includes(b.colors[0]);
+      const sampleImgsHtml = b.colors.map(col => {
+        const u = getVehicleImageURL(saveData.selectedSkin, col);
+        const isSparkle = col === 'gold_wrap' || col === 'silver_wrap' || col === 'rainbow';
+        return `<div class="${isSparkle ? 'sparkle-wrap' : ''}" style="display:flex;align-items:center;justify-content:center;"><img class="shop-preview-img" style="height:68px;" src="${u}" alt="${b.name}" /></div>`;
+      }).join('');
+
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (owned ? ' owned' : '');
+      card.innerHTML = `
+        <div class="shop-preview-banner">
+          ${sampleImgsHtml}
+        </div>
+        <div style="font-weight:900;font-size:15px;">${b.name}</div>
+        <div style="font-size:12px;color:#94a3b8;">${b.desc}</div>
+        <div style="font-size:13px;font-weight:900;color:#fbbf24;margin-top:auto;">🪙 ${b.price} G</div>
+        <button class="buy-btn ${owned ? 'owned' : ''}" type="button">${owned ? '보유 중' : '구매하기'}</button>
+      `;
+      card.querySelector('button').addEventListener('click', () => {
+        if (!owned) {
+          if (saveData.gold >= b.price) {
+            saveData.gold -= b.price;
+            b.colors.forEach(col => {
+              if (!saveData.ownedColors.includes(col)) saveData.ownedColors.push(col);
+            });
+            saveData.selectedColor = b.colors[0];
+            writeSaveData();
+            updateMenuUI();
+            rebuildLobbyPreview();
+            sfx.finish();
+            showBanner(`🎉 ${b.name} 구매 완료!`, '#10b981');
+          } else {
+            showBanner('골드가 부족합니다!', '#f87171');
+          }
+        }
+      });
+      shopGrid.appendChild(card);
+    });
+
+    const titleShopGrid = document.getElementById('title-shop-grid');
+    titleShopGrid.innerHTML = '';
+    TITLES.forEach(t => {
+      const unlocked = saveData.unlockedTitles.includes(t.id);
+      const isSelected = saveData.selectedTitle === t.id;
+      const prog = t.getProgress();
+      const pct = Math.min(100, Math.round((prog.cur / Math.max(1, prog.max)) * 100));
+      const canBuy = !unlocked && (t.type === 'shop' || t.type === 'hybrid') && t.price;
+
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (unlocked ? ' owned' : '');
+      let actionHtml = '';
+      if (unlocked) {
+        actionHtml = `<button class="buy-btn ${isSelected ? 'owned' : ''}" type="button" style="${!isSelected ? 'background:linear-gradient(135deg,#f59e0b,#d97706);' : ''}">${isSelected ? '★ 현재 장착 중' : '칭호 장착하기'}</button>`;
+      } else if (canBuy) {
+        actionHtml = `
+          <div style="font-size:13px;font-weight:900;color:#fbbf24;">🪙 ${t.price} G</div>
+          <button class="buy-btn" type="button">칭호 구매하기</button>
+        `;
+      } else {
+        actionHtml = `
+          <div style="font-size:11px;font-weight:800;color:#7dd3fc;">달성도: ${prog.cur} / ${prog.max} (${pct}%)</div>
+          <div class="progress-mini-bar"><div class="progress-mini-fill" style="width:${pct}%"></div></div>
+          <button class="buy-btn owned" type="button">미션 달성 시 자동 해금</button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:900;font-size:15px;color:${unlocked ? '#fde047' : '#fff'};">🏅 [${t.name}]</span>
+          <span style="font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,0.1);color:#cbd5e1;">${t.type === 'shop' ? '상점 전용' : (t.type === 'hybrid' ? '미션/상점' : '업적 칭호')}</span>
+        </div>
+        <div style="font-size:12px;color:#94a3b8;">${t.desc}</div>
+        <div style="margin-top:auto;">${actionHtml}</div>
+      `;
+
+      const btn = card.querySelector('button');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          if (unlocked && !isSelected) {
+            saveData.selectedTitle = t.id;
+            writeSaveData();
+            updateMenuUI();
+            showBanner(`🏅 [${t.name}] 칭호를 장착했습니다!`, '#fbbf24');
+          } else if (canBuy) {
+            if (saveData.gold >= t.price) {
+              saveData.gold -= t.price;
+              saveData.unlockedTitles.push(t.id);
+              saveData.selectedTitle = t.id;
+              writeSaveData();
+              updateMenuUI();
+              sfx.finish();
+              showBanner(`🎉 🏅 [${t.name}] 칭호 구매 & 장착 완료!`, '#fde047');
+            } else {
+              showBanner('골드가 부족합니다!', '#f87171');
+            }
+          }
+        });
+      }
+      titleShopGrid.appendChild(card);
+    });
+  }
+
+  document.getElementById('mode-item').addEventListener('click', () => {
+    selectedMode = 'item';
+    document.getElementById('mode-item').classList.add('active');
+    document.getElementById('mode-speed').classList.remove('active');
+  });
+  document.getElementById('mode-speed').addEventListener('click', () => {
+    selectedMode = 'speed';
+    document.getElementById('mode-speed').classList.add('active');
+    document.getElementById('mode-item').classList.remove('active');
+  });
+
+  document.getElementById('open-shop-btn').addEventListener('click', () => {
+    sfx.init();
+    updateMenuUI();
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('shop-screen').classList.remove('hidden');
+  });
+  document.getElementById('close-shop-btn').addEventListener('click', () => {
+    document.getElementById('shop-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+  });
+
+  const resetModal = document.getElementById('reset-confirm-modal');
+  document.getElementById('reset-data-btn').addEventListener('click', () => {
+    resetModal.classList.remove('hidden');
+  });
+  document.getElementById('confirm-reset-cancel').addEventListener('click', () => {
+    resetModal.classList.add('hidden');
+  });
+  document.getElementById('confirm-reset-ok').addEventListener('click', () => {
+    saveData = getDefaultSaveData();
+    writeSaveData();
+    nickInput.value = '다오';
+    updateMenuUI();
+    rebuildLobbyPreview();
+    resetModal.classList.add('hidden');
+    showBanner('데이터가 초기화되었습니다.', '#f87171');
+  });
+
+  const trackGrid = document.getElementById('track-grid');
+  function buildTrackSvg(pts) {
+    const xs = pts.map(p => p[0]);
+    const zs = pts.map(p => p[2]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minZ = Math.min(...zs), maxZ = Math.max(...zs);
+    const span = Math.max(maxX - minX, maxZ - minZ, 1);
+    const norm = pts.map(p => {
+      const nx = 8 + ((p[0] - minX) / span) * 48;
+      const ny = 6 + ((p[2] - minZ) / span) * 32;
+      return `${nx.toFixed(1)},${ny.toFixed(1)}`;
+    }).join(' ');
+    return `<svg class="track-svg" viewBox="0 0 64 44" style="width:64px;height:44px;background:rgba(0,0,0,0.35);border-radius:8px;padding:4px;"><polygon points="${norm}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linejoin="round"/></svg>`;
+  }
+
+  TRACKS.forEach(tr => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'track-card';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:900;padding:3px 8px;border-radius:6px;background:rgba(56,189,248,0.2);color:#7dd3fc;">TRACK ${String(tr.id + 1).padStart(2, '0')}</span>
+        <span style="font-size:12px;color:#fbbf24;">${tr.stars}</span>
+      </div>
+      <div style="font-size:15px;font-weight:800;text-align:left;">${tr.name}</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.3;text-align:left;">${tr.desc}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px;">
+        ${buildTrackSvg(tr.pts)}
+        <span style="padding:6px 12px;border-radius:999px;background:linear-gradient(135deg,#0ea5e9,#2563eb);font-size:11px;font-weight:800;">레이스 시작 ▶</span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      sfx.init();
+      currentTrack = tr;
+      const val = nickInput.value.trim();
+      saveData.nickname = val || '다오';
+      writeSaveData();
+      startRace();
+    });
+    trackGrid.appendChild(card);
+  });
+
+  document.getElementById('open-tracks-btn').addEventListener('click', () => {
+    sfx.init();
+    const val = nickInput.value.trim();
+    saveData.nickname = val || '다오';
+    writeSaveData();
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('track-screen').classList.remove('hidden');
+  });
+
+  document.getElementById('back-start-btn').addEventListener('click', () => {
+    document.getElementById('track-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+  });
+
+  document.getElementById('home-btn').addEventListener('click', () => {
+    gameState = 'menu';
+    clearInterval(countdownInterval);
+    clearInterval(lineupInterval);
+    document.getElementById('lineup-screen').classList.add('hidden');
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('mobile-controls').classList.add('hidden');
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+    if (scene && racers.length) {
+      racers.forEach(r => { if (r.mesh) scene.remove(r.mesh.group); });
+    }
+    racers = [];
+    buildTrack3D(currentTrack);
+    rebuildLobbyPreview();
+    updateMenuUI();
+  });
+
+  document.getElementById('retry-btn').addEventListener('click', () => {
+    document.getElementById('result-screen').classList.add('hidden');
+    startRace();
+  });
+
+  document.getElementById('change-track-btn').addEventListener('click', () => {
+    document.getElementById('result-screen').classList.add('hidden');
+    document.getElementById('track-screen').classList.remove('hidden');
+  });
+
+  function updatePadVisibility() {
+    const pad = document.getElementById('mobile-controls');
+    if (gameState !== 'racing' && gameState !== 'countdown') {
+      pad.classList.add('hidden');
+      return;
+    }
+    const autoShow = ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024;
+    const show = padForced !== null ? padForced : autoShow;
+    pad.classList.toggle('hidden', !show);
+  }
+
+  document.getElementById('toggle-pad-btn').addEventListener('click', () => {
+    const pad = document.getElementById('mobile-controls');
+    padForced = pad.classList.contains('hidden');
+    updatePadVisibility();
+  });
+
+  updateMenuUI();
+
+  // ==========================================
+  // 5. 멀티터치 및 키보드 입력 시스템
+  // ==========================================
+  const keys = {};
+  const touchInput = { left: false, right: false, drift: false, brake: false };
+  const activePointers = new Map();
+
+  window.addEventListener('keydown', e => {
+    if (document.activeElement === nickInput) return;
+    keys[e.code] = true;
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+      e.preventDefault();
+    }
+    if ((e.code === 'ControlLeft' || e.code === 'ControlRight' || e.code === 'Space') && gameState === 'racing') {
+      usePlayerAction();
+    }
+    if (e.code === 'KeyR' && gameState === 'racing') {
+      resetKartToRoad(player);
+    }
+  });
+  window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+  const btnSteerLeft = document.getElementById('btn-steer-left');
+  const btnSteerRight = document.getElementById('btn-steer-right');
+  const btnDrift = document.getElementById('btn-drift');
+  const btnBrake = document.getElementById('btn-brake');
+  const btnUse = document.getElementById('btn-use');
+  const btnReset = document.getElementById('btn-reset');
+
+  function recomputeTouchState() {
+    let l = false, r = false, d = false, b = false;
+    activePointers.forEach(info => {
+      if (info.type === 'left') { l = true; }
+      else if (info.type === 'right') { r = true; }
+      else if (info.type === 'drift') { d = true; }
+      else if (info.type === 'brake') { b = true; }
+    });
+    touchInput.left = l; touchInput.right = r; touchInput.drift = d; touchInput.brake = b;
+    btnSteerLeft.classList.toggle('pressed', l);
+    btnSteerRight.classList.toggle('pressed', r);
+    btnDrift.classList.toggle('pressed', d);
+    btnBrake.classList.toggle('pressed', b);
+  }
+
+  function clearAllPointers() { activePointers.clear(); recomputeTouchState(); }
+  window.addEventListener('blur', clearAllPointers);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearAllPointers(); });
+
+  function bindHoldButton(el, type) {
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      activePointers.set(e.pointerId, { type });
+      recomputeTouchState();
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => {
+      el.addEventListener(ev, e => {
+        activePointers.delete(e.pointerId);
+        recomputeTouchState();
+      });
+    });
+  }
+  bindHoldButton(btnSteerLeft, 'left');
+  bindHoldButton(btnSteerRight, 'right');
+  bindHoldButton(btnDrift, 'drift');
+  bindHoldButton(btnBrake, 'brake');
+
+  btnUse.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    btnUse.classList.add('pressed');
+    if (gameState === 'racing') usePlayerAction();
+  });
+  ['pointerup', 'pointercancel'].forEach(ev => { btnUse.addEventListener(ev, () => btnUse.classList.remove('pressed')); });
+
+  btnReset.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (gameState === 'racing') resetKartToRoad(player);
+  });
+
+  // ==========================================
+  // 6. Three.js 3D 씬 및 트랙 빌더
+  // ==========================================
+  const hasThree = typeof window.THREE !== 'undefined';
+  const canvas = document.getElementById('game-canvas');
+  let renderer = null, scene = null, camera = null, worldGroup = null;
+  let sharedSparkGeo = null, sharedSmokeGeo = null, sharedSkidGeo = null, sharedStarGeo = null;
+
+  if (hasThree) {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(62, Math.max(window.innerWidth, 1) / Math.max(window.innerHeight, 1), 0.5, 900);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.72);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+    dirLight.position.set(120, 220, 100);
+    scene.add(dirLight);
+
+    worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    sharedSparkGeo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
+    sharedSmokeGeo = new THREE.BoxGeometry(0.38, 0.38, 0.38);
+    sharedSkidGeo = new THREE.PlaneGeometry(0.32, 0.95);
+    sharedSkidGeo.rotateX(-Math.PI / 2);
+    sharedStarGeo = new THREE.OctahedronGeometry(0.28, 0);
+  }
+
+  function syncViewportSize() {
+    const vv = window.visualViewport;
+    const w = Math.max(Math.round(vv ? vv.width : window.innerWidth), document.documentElement.clientWidth || 0, 1);
+    const h = Math.max(Math.round(vv ? vv.height : window.innerHeight), document.documentElement.clientHeight || 0, 1);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    if (hasThree && camera && renderer) {
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h, true);
+    }
+  }
+  syncViewportSize();
+
+  window.addEventListener('resize', () => {
+    syncViewportSize();
+    updatePadVisibility();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      syncViewportSize();
+      updatePadVisibility();
+    }, 100);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      syncViewportSize();
+      updatePadVisibility();
+    });
+    window.visualViewport.addEventListener('scroll', syncViewportSize);
+  }
+
+  const ROAD_HALF_WIDTH = 13.5;
+  const SAMPLES = 420;
+  let trackCurve = null;
+  let trackSamples = [];
+  let itemBoxes = [];
+  let boostPads = [];
+  let hazards = [];
+  let particles = [];
+  let skidMarks = [];
+
+  function buildTrack3D(trackData) {
+    if (!hasThree) return;
+    scene.remove(worldGroup);
+    worldGroup = new THREE.Group();
+    scene.add(worldGroup);
+
+    scene.background = new THREE.Color(trackData.skyColor);
+    scene.fog = new THREE.FogExp2(trackData.fogColor, 0.0022);
+
+    const groundGeo = new THREE.PlaneGeometry(1800, 1800);
+    const groundMat = new THREE.MeshLambertMaterial({ color: trackData.groundColor });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -6;
+    worldGroup.add(ground);
+
+    const vectors = trackData.pts.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+    trackCurve = new THREE.CatmullRomCurve3(vectors, true, 'catmullrom', 0.45);
+
+    trackSamples = [];
+    for (let i = 0; i < SAMPLES; i++) {
+      const t = i / SAMPLES;
+      const pt = trackCurve.getPointAt(t);
+      const tan = trackCurve.getTangentAt(t).normalize();
+      const right = new THREE.Vector3().crossVectors(tan, new THREE.Vector3(0, 1, 0)).normalize();
+      trackSamples.push({ t, pt, tan, right });
+    }
+
+    const roadVerts = [], roadIndices = [], railLVerts = [], railRVerts = [], railIndices = [];
+    for (let i = 0; i <= SAMPLES; i++) {
+      const s = trackSamples[i % SAMPLES];
+      const leftPt = s.pt.clone().addScaledVector(s.right, -ROAD_HALF_WIDTH);
+      const rightPt = s.pt.clone().addScaledVector(s.right, ROAD_HALF_WIDTH);
+      roadVerts.push(leftPt.x, leftPt.y, leftPt.z, rightPt.x, rightPt.y, rightPt.z);
+      railLVerts.push(leftPt.x, leftPt.y, leftPt.z, leftPt.x, leftPt.y + 1.5, leftPt.z);
+      railRVerts.push(rightPt.x, rightPt.y, rightPt.z, rightPt.x, rightPt.y + 1.5, rightPt.z);
+
+      if (i < SAMPLES) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        roadIndices.push(a, c, b, b, c, d);
+        railIndices.push(a, b, c, b, d, c);
+      }
+    }
+
+    const roadGeo = new THREE.BufferGeometry();
+    roadGeo.setAttribute('position', new THREE.Float32BufferAttribute(roadVerts, 3));
+    roadGeo.setIndex(roadIndices);
+    roadGeo.computeVertexNormals();
+    worldGroup.add(new THREE.Mesh(roadGeo, new THREE.MeshLambertMaterial({ color: trackData.roadColor, side: THREE.DoubleSide })));
+
+    const railMat = new THREE.MeshLambertMaterial({ color: trackData.railColor, side: THREE.DoubleSide });
+    [railLVerts, railRVerts].forEach(verts => {
+      const rGeo = new THREE.BufferGeometry();
+      rGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      rGeo.setIndex(railIndices);
+      rGeo.computeVertexNormals();
+      worldGroup.add(new THREE.Mesh(rGeo, railMat));
+    });
+
+    const dashGeo = new THREE.BoxGeometry(0.6, 0.12, 3.2);
+    const dashMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pillarGeo = new THREE.CylinderGeometry(1.4, 1.8, 24, 8);
+    const pillarMat = new THREE.MeshLambertMaterial({ color: 0x64748b });
+
+    for (let i = 0; i < SAMPLES; i += 6) {
+      const s = trackSamples[i];
+      const dash = new THREE.Mesh(dashGeo, dashMat);
+      dash.position.copy(s.pt).add(new THREE.Vector3(0, 0.08, 0));
+      dash.lookAt(s.pt.clone().add(s.tan));
+      worldGroup.add(dash);
+
+      if (i % 24 === 0 && s.pt.y > 1.5) {
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.set(s.pt.x, s.pt.y - 12.2, s.pt.z);
+        worldGroup.add(pillar);
+      }
+    }
+
+    const startS = trackSamples[0];
+    const archGroup = new THREE.Group();
+    archGroup.position.copy(startS.pt);
+    archGroup.lookAt(startS.pt.clone().add(startS.tan));
+    const postGeo = new THREE.BoxGeometry(1.4, 10, 1.4);
+    const postMat = new THREE.MeshLambertMaterial({ color: 0xfacc15 });
+    const p1 = new THREE.Mesh(postGeo, postMat); p1.position.set(-ROAD_HALF_WIDTH, 5, 0);
+    const p2 = new THREE.Mesh(postGeo, postMat); p2.position.set(ROAD_HALF_WIDTH, 5, 0);
+    const banner = new THREE.Mesh(new THREE.BoxGeometry(ROAD_HALF_WIDTH * 2 + 2, 2.2, 1.2), new THREE.MeshLambertMaterial({ color: 0x111827 }));
+    banner.position.set(0, 9.5, 0);
+    const lineMesh = new THREE.Mesh(new THREE.BoxGeometry(ROAD_HALF_WIDTH * 2, 0.15, 2.4), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    lineMesh.position.set(0, 0.09, 0);
+    archGroup.add(p1, p2, banner, lineMesh);
+    worldGroup.add(archGroup);
+
+    boostPads = []; itemBoxes = []; hazards = []; particles = []; skidMarks = [];
+    const padIndices = [45, 145, 255, 345];
+    const padGeo = new THREE.BoxGeometry(5.5, 0.18, 7.5);
+    const padMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+    padIndices.forEach(idx => {
+      const s = trackSamples[idx % SAMPLES];
+      const mesh = new THREE.Mesh(padGeo, padMat);
+      mesh.position.copy(s.pt).add(new THREE.Vector3(0, 0.12, 0));
+      mesh.lookAt(s.pt.clone().add(s.tan));
+      worldGroup.add(mesh);
+      boostPads.push({ pos: s.pt.clone() });
+    });
+
+    if (selectedMode === 'item') {
+      const boxRows = [45, 105, 165, 225, 285, 345];
+      const boxGeo = new THREE.BoxGeometry(2.3, 2.3, 2.3);
+      boxRows.forEach(idx => {
+        const s = trackSamples[idx % SAMPLES];
+        [-7, 0, 7].forEach(offset => {
+          const boxMat = new THREE.MeshLambertMaterial({ color: 0xf43f5e, emissive: 0x881337 });
+          const mesh = new THREE.Mesh(boxGeo, boxMat);
+          const pos = s.pt.clone().addScaledVector(s.right, offset).add(new THREE.Vector3(0, 1.6, 0));
+          mesh.position.copy(pos);
+          worldGroup.add(mesh);
+          itemBoxes.push({ mesh, pos, cooldown: 0 });
+        });
+      });
+    }
+  }
+
+  // ==========================================
+  // 7. 입체 스킨 및 랩 번들 3D 모델 생성기
+  // ==========================================
+  function createBodyMaterial(bodyColorHex) {
+    if (bodyColorHex === 'gold_wrap') {
+      return new THREE.MeshPhongMaterial({
+        color: 0xfde047,
+        emissive: 0xca8a04,
+        emissiveIntensity: 0.35,
+        specular: 0xffffff,
+        shininess: 110
+      });
+    }
+    if (bodyColorHex === 'silver_wrap') {
+      return new THREE.MeshPhongMaterial({
+        color: 0xe5e7eb,
+        emissive: 0x94a3b8,
+        emissiveIntensity: 0.32,
+        specular: 0xffffff,
+        shininess: 120
+      });
+    }
+    const isRainbow = (bodyColorHex === 'rainbow');
+    const colorVal = isRainbow ? 0xffffff : parseInt(bodyColorHex.replace('#', '0x'));
+    return new THREE.MeshLambertMaterial({ color: colorVal });
+  }
+
+  function createVehicleMesh(skinId, bodyColorHex) {
+    if (!hasThree) return null;
+    const group = new THREE.Group();
+    const isRainbow = (bodyColorHex === 'rainbow');
+    const wrapType = (bodyColorHex === 'gold_wrap' || bodyColorHex === 'silver_wrap') ? bodyColorHex : null;
+    const bodyMat = createBodyMaterial(bodyColorHex);
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+    const glassMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 });
+
+    let wheels = [];
+    let skaterAnim = null;
+    let ufoAnim = null;
+
+    if (skinId === 'bike') {
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 2.8), bodyMat);
+      frame.position.y = 0.6; group.add(frame);
+      const seat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.9), new THREE.MeshLambertMaterial({ color: 0x111827 }));
+      seat.position.set(0, 0.95, 0.3); group.add(seat);
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 8), wheelMat);
+      handle.rotation.z = Math.PI / 2; handle.position.set(0, 1.15, -0.8); group.add(handle);
+
+      const wGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 12); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(0, 0.5, -1.3);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(0, 0.5, 1.3);
+      group.add(w1, w2); wheels = [w1, w2];
+
+    } else if (skinId === 'skate') {
+      const skaterGroup = new THREE.Group();
+      group.add(skaterGroup);
+
+      const skinMat = new THREE.MeshLambertMaterial({ color: 0xfde68a });
+      const pantsMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+      const skateBootMat = bodyMat;
+      const skateWheelMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.95, 1.15, 0.55), bodyMat);
+      torso.position.set(0, 1.75, 0);
+      torso.rotation.x = 0.18;
+      skaterGroup.add(torso);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 14, 14), skinMat);
+      head.position.set(0, 2.62, -0.1);
+      const helmet = new THREE.Mesh(
+        new THREE.SphereGeometry(0.44, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.58),
+        bodyMat
+      );
+      helmet.position.set(0, 2.65, -0.1);
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.2, 0.25), glassMat);
+      visor.position.set(0, 2.6, -0.45);
+      skaterGroup.add(head, helmet, visor);
+
+      const armGeo = new THREE.BoxGeometry(0.26, 0.95, 0.26);
+      const armLPivot = new THREE.Group();
+      armLPivot.position.set(-0.62, 2.2, -0.05);
+      const armL = new THREE.Mesh(armGeo, bodyMat);
+      armL.position.set(0, -0.42, 0);
+      armLPivot.add(armL);
+
+      const armRPivot = new THREE.Group();
+      armRPivot.position.set(0.62, 2.2, -0.05);
+      const armR = new THREE.Mesh(armGeo, bodyMat);
+      armR.position.set(0, -0.42, 0);
+      armRPivot.add(armR);
+      skaterGroup.add(armLPivot, armRPivot);
+
+      function buildSkaterLeg(sideX) {
+        const legPivot = new THREE.Group();
+        legPivot.position.set(sideX, 1.2, 0);
+
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.95, 0.34), pantsMat);
+        leg.position.set(0, -0.45, 0);
+        legPivot.add(leg);
+
+        const boot = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.32, 0.95), skateBootMat);
+        boot.position.set(0, -0.95, -0.15);
+        legPivot.add(boot);
+
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 1.05), wheelMat);
+        frame.position.set(0, -1.12, -0.15);
+        legPivot.add(frame);
+
+        const wGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.16, 10);
+        wGeo.rotateZ(Math.PI / 2);
+        [-0.5, -0.25, 0.0, 0.25].forEach(wz => {
+          const w = new THREE.Mesh(wGeo, skateWheelMat);
+          w.position.set(0, -1.18, wz - 0.05);
+          legPivot.add(w);
+          wheels.push(w);
+        });
+
+        skaterGroup.add(legPivot);
+        return legPivot;
+      }
+
+      const legLPivot = buildSkaterLeg(-0.28);
+      const legRPivot = buildSkaterLeg(0.28);
+
+      skaterAnim = { skaterGroup, legLPivot, legRPivot, armLPivot, armRPivot, stridePhase: 0 };
+
+    } else if (skinId === 'motorbike') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 3.4), bodyMat);
+      body.position.y = 0.7; group.add(body);
+      const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.6, 1.1), glassMat);
+      windshield.position.set(0, 1.15, -0.3); windshield.rotation.x = -0.4; group.add(windshield);
+
+      const wGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.4, 12); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(0, 0.55, -1.4);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(0, 0.55, 1.4);
+      group.add(w1, w2); wheels = [w1, w2];
+
+    } else if (skinId === 'car') {
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.7, 4.2), bodyMat);
+      chassis.position.y = 0.6; group.add(chassis);
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.75, 2.1), glassMat);
+      roof.position.set(0, 1.2, -0.1); group.add(roof);
+      const spoiler = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.2, 0.8), bodyMat);
+      spoiler.position.set(0, 1.35, 1.8); group.add(spoiler);
+
+      const wGeo = new THREE.CylinderGeometry(0.48, 0.48, 0.45, 12); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(-1.3, 0.48, -1.4);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(1.3, 0.48, -1.4);
+      const w3 = new THREE.Mesh(wGeo, wheelMat); w3.position.set(-1.3, 0.48, 1.4);
+      const w4 = new THREE.Mesh(wGeo, wheelMat); w4.position.set(1.3, 0.48, 1.4);
+      group.add(w1, w2, w3, w4); wheels = [w1, w2, w3, w4];
+
+    } else if (skinId === 'truck') {
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.3, 4.8), bodyMat);
+      chassis.position.y = 0.9; group.add(chassis);
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.1, 2.0), glassMat);
+      cab.position.set(0, 1.9, -1.1); group.add(cab);
+
+      const wGeo = new THREE.CylinderGeometry(0.55, 0.55, 0.5, 12); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(-1.5, 0.55, -1.6);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(1.5, 0.55, -1.6);
+      const w3 = new THREE.Mesh(wGeo, wheelMat); w3.position.set(-1.5, 0.55, 0);
+      const w4 = new THREE.Mesh(wGeo, wheelMat); w4.position.set(1.5, 0.55, 0);
+      const w5 = new THREE.Mesh(wGeo, wheelMat); w5.position.set(-1.5, 0.55, 1.6);
+      const w6 = new THREE.Mesh(wGeo, wheelMat); w6.position.set(1.5, 0.55, 1.6);
+      group.add(w1, w2, w3, w4, w5, w6); wheels = [w1, w2, w3, w4, w5, w6];
+
+    } else if (skinId === 'train') {
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 5.2), bodyMat);
+      body.position.y = 1.1; group.add(body);
+      const boiler = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 3.2, 16), new THREE.MeshLambertMaterial({ color: 0x334155 }));
+      boiler.rotation.x = Math.PI / 2; boiler.position.set(0, 1.3, -0.6); group.add(boiler);
+      const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.2, 12), wheelMat);
+      chimney.position.set(0, 2.5, -1.6); group.add(chimney);
+
+      const wGeo = new THREE.CylinderGeometry(0.65, 0.65, 0.35, 14); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(-1.3, 0.65, -1.8);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(1.3, 0.65, -1.8);
+      const w3 = new THREE.Mesh(wGeo, wheelMat); w3.position.set(-1.3, 0.65, -0.6);
+      const w4 = new THREE.Mesh(wGeo, wheelMat); w4.position.set(1.3, 0.65, -0.6);
+      const w5 = new THREE.Mesh(wGeo, wheelMat); w5.position.set(-1.3, 0.65, 0.6);
+      const w6 = new THREE.Mesh(wGeo, wheelMat); w6.position.set(1.3, 0.65, 0.6);
+      const w7 = new THREE.Mesh(wGeo, wheelMat); w7.position.set(-1.3, 0.65, 1.8);
+      const w8 = new THREE.Mesh(wGeo, wheelMat); w8.position.set(1.3, 0.65, 1.8);
+      group.add(w1, w2, w3, w4, w5, w6, w7, w8); wheels = [w1, w2, w3, w4, w5, w6, w7, w8];
+
+    } else if (skinId === 'ufo') {
+      const ufoGroup = new THREE.Group();
+      ufoGroup.position.y = 0.85;
+      group.add(ufoGroup);
+
+      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 2.35, 0.55, 24), bodyMat);
+      saucer.position.y = 0.45;
+      ufoGroup.add(saucer);
+
+      const lowerHull = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 1.15, 0.35, 24), wheelMat);
+      lowerHull.position.y = 0.05;
+      ufoGroup.add(lowerHull);
+
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(1.15, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.52),
+        glassMat
+      );
+      dome.position.y = 0.7;
+      ufoGroup.add(dome);
+
+      const pilotHead = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 12), new THREE.MeshLambertMaterial({ color: 0xfef08a }));
+      pilotHead.position.y = 1.02;
+      ufoGroup.add(pilotHead);
+
+      const rimGroup = new THREE.Group();
+      rimGroup.position.y = 0.45;
+      const bulbColors = [0x38bdf8, 0xfacc15, 0xf43f5e, 0x4ade80];
+      for (let b = 0; b < 8; b++) {
+        const ang = (b / 8) * Math.PI * 2;
+        const bulb = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 8, 8),
+          new THREE.MeshBasicMaterial({ color: bulbColors[b % bulbColors.length] })
+        );
+        bulb.position.set(Math.cos(ang) * 2.28, 0, Math.sin(ang) * 2.28);
+        rimGroup.add(bulb);
+      }
+      ufoGroup.add(rimGroup);
+
+      const plasmaRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.85, 1.55, 24),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
+      );
+      plasmaRing.rotation.x = Math.PI / 2;
+      plasmaRing.position.y = -0.35;
+      ufoGroup.add(plasmaRing);
+
+      ufoAnim = { ufoGroup, rimGroup, plasmaRing, hoverPhase: Math.random() * Math.PI * 2 };
+
+    } else {
+      const chassis = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.8, 3.8), bodyMat);
+      chassis.position.y = 0.65; group.add(chassis);
+      const spoiler = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 0.7), bodyMat);
+      spoiler.position.set(0, 1.35, 1.65); group.add(spoiler);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), new THREE.MeshLambertMaterial({ color: 0xfef08a }));
+      head.position.set(0, 1.45, -0.1); group.add(head);
+
+      const wGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.42, 12); wGeo.rotateZ(Math.PI / 2);
+      const w1 = new THREE.Mesh(wGeo, wheelMat); w1.position.set(-1.25, 0.45, -1.2);
+      const w2 = new THREE.Mesh(wGeo, wheelMat); w2.position.set(1.25, 0.45, -1.2);
+      const w3 = new THREE.Mesh(wGeo, wheelMat); w3.position.set(-1.25, 0.45, 1.2);
+      const w4 = new THREE.Mesh(wGeo, wheelMat); w4.position.set(1.25, 0.45, 1.2);
+      group.add(w1, w2, w3, w4); wheels = [w1, w2, w3, w4];
+    }
+
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const flameL = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.6, 8), flameMat);
+    flameL.rotation.x = Math.PI / 2;
+    flameL.position.set(skinId === 'skate' ? -0.35 : -0.55, skinId === 'skate' ? 0.35 : 0.7, skinId === 'skate' ? 1.0 : 2.5);
+    const flameR = flameL.clone();
+    flameR.position.x = skinId === 'skate' ? 0.35 : 0.55;
+    flameL.visible = false; flameR.visible = false;
+    group.add(flameL, flameR);
+
+    const shieldMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(2.4, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.32, wireframe: true })
+    );
+    shieldMesh.position.y = 1.2; shieldMesh.visible = false;
+    group.add(shieldMesh);
+
+    return { group, wheels, flameL, flameR, shieldMesh, bodyMat, isRainbow, wrapType, skaterAnim, ufoAnim };
+  }
+
+  function spawnWrapSparkle(worldPos, wrapType, parentGroup = worldGroup) {
+    if (!hasThree || !parentGroup) return;
+    const isGold = wrapType === 'gold_wrap';
+    const sparkColor = isGold
+      ? (Math.random() < 0.5 ? 0xfef08a : 0xffffff)
+      : (Math.random() < 0.5 ? 0xf8fafc : 0xe2e8f0);
+    const mat = new THREE.MeshBasicMaterial({ color: sparkColor, transparent: true, opacity: 1.0 });
+    const mesh = new THREE.Mesh(sharedStarGeo, mat);
+    mesh.position.set(
+      worldPos.x + (Math.random() - 0.5) * 2.8,
+      worldPos.y + 0.5 + Math.random() * 1.9,
+      worldPos.z + (Math.random() - 0.5) * 2.8
+    );
+    mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+    parentGroup.add(mesh);
+    particles.push({
+      mesh,
+      mat,
+      parentGroup,
+      life: 0.42,
+      maxLife: 0.42,
+      vy: 1.1 + Math.random() * 0.8,
+      isTwinkle: true
+    });
+  }
+
+  function updateWrapShimmer(meshObj, worldPos, timeSec, dt, parentGroup = worldGroup) {
+    if (!meshObj || !meshObj.wrapType) return;
+    const pulse = 0.22 + 0.28 * Math.sin(timeSec * 7.5);
+    meshObj.bodyMat.emissiveIntensity = pulse;
+    if (Math.random() < dt * 14) {
+      spawnWrapSparkle(worldPos, meshObj.wrapType, parentGroup);
+    }
+  }
+
+  function animateSkater(meshObj, speed, driftDir, dt) {
+    if (!meshObj || !meshObj.skaterAnim) return;
+    const sa = meshObj.skaterAnim;
+    const absSpd = Math.abs(speed);
+    if (absSpd > 1.5) {
+      sa.stridePhase += dt * (4.5 + absSpd * 0.24);
+      const swing = Math.sin(sa.stridePhase) * 0.78;
+      sa.legLPivot.rotation.x = swing;
+      sa.legRPivot.rotation.x = -swing;
+      sa.legLPivot.rotation.z = Math.max(0, Math.sin(sa.stridePhase)) * 0.24;
+      sa.legRPivot.rotation.z = -Math.max(0, -Math.sin(sa.stridePhase)) * 0.24;
+
+      sa.armLPivot.rotation.x = -swing * 0.9;
+      sa.armRPivot.rotation.x = swing * 0.9;
+
+      sa.skaterGroup.position.y = Math.abs(Math.cos(sa.stridePhase)) * 0.14;
+      sa.skaterGroup.rotation.z = THREE.MathUtils.lerp(sa.skaterGroup.rotation.z, driftDir * 0.25, 0.18);
+    } else {
+      sa.legLPivot.rotation.x = THREE.MathUtils.lerp(sa.legLPivot.rotation.x, 0, 0.2);
+      sa.legRPivot.rotation.x = THREE.MathUtils.lerp(sa.legRPivot.rotation.x, 0, 0.2);
+      sa.legLPivot.rotation.z = THREE.MathUtils.lerp(sa.legLPivot.rotation.z, 0, 0.2);
+      sa.legRPivot.rotation.z = THREE.MathUtils.lerp(sa.legRPivot.rotation.z, 0, 0.2);
+      sa.armLPivot.rotation.x = THREE.MathUtils.lerp(sa.armLPivot.rotation.x, 0, 0.2);
+      sa.armRPivot.rotation.x = THREE.MathUtils.lerp(sa.armRPivot.rotation.x, 0, 0.2);
+      sa.skaterGroup.position.y = 0;
+      sa.skaterGroup.rotation.z = 0;
+    }
+  }
+
+  function animateUfo(meshObj, speed, driftDir, dt) {
+    if (!meshObj || !meshObj.ufoAnim) return;
+    const ua = meshObj.ufoAnim;
+    ua.hoverPhase += dt * (4.2 + Math.abs(speed) * 0.08);
+    ua.ufoGroup.position.y = 0.85 + Math.sin(ua.hoverPhase) * 0.22;
+    ua.rimGroup.rotation.y += dt * (2.5 + Math.abs(speed) * 0.12);
+    ua.ufoGroup.rotation.z = THREE.MathUtils.lerp(ua.ufoGroup.rotation.z, driftDir * 0.24, 0.18);
+    ua.ufoGroup.rotation.x = THREE.MathUtils.lerp(ua.ufoGroup.rotation.x, -Math.min(0.22, Math.abs(speed) * 0.003), 0.15);
+    const pulse = 0.9 + 0.18 * Math.sin(ua.hoverPhase * 1.6);
+    ua.plasmaRing.scale.set(pulse, pulse, 1);
+  }
+
+  let lobbyPreviewMesh = null;
+  function rebuildLobbyPreview() {
+    if (!hasThree || !scene) return;
+    if (lobbyPreviewMesh) {
+      scene.remove(lobbyPreviewMesh.group);
+      lobbyPreviewMesh = null;
+    }
+    if (gameState === 'menu') {
+      lobbyPreviewMesh = createVehicleMesh(saveData.selectedSkin, saveData.selectedColor);
+      const startSample = trackSamples[0] || { pt: new THREE.Vector3(0, 0, 0) };
+      lobbyPreviewMesh.group.position.copy(startSample.pt).add(new THREE.Vector3(0, 0.3, 0));
+      scene.add(lobbyPreviewMesh.group);
+    }
+  }
+
+  // ==========================================
+  // 8. 레이서 및 10인 대전 관리 시스템
+  // ==========================================
+  let racers = [];
+  let player = null;
+  let gameState = 'menu';
+  let raceTime = 0;
+  let countdownInterval = null;
+  let lineupInterval = null;
+  const TOTAL_LAPS = 3;
+  const TOTAL_RACERS = 10;
+
+  const AI_NAMES = ['배찌', '디지니', '모스', '에띠', '우니', '케피', '마리드', '로두마니', '티이라'];
+  const AI_SKINS = ['default', 'bike', 'ufo', 'skate', 'motorbike', 'car', 'truck'];
+  const AI_COLORS = ['#3b82f6', '#22c55e', '#facc15', '#ec4899', 'gold_wrap', 'silver_wrap', '#f97316', '#64748b', '#dc2626'];
+  const AI_TITLES = ['드리프트 장인', '트랙의 지배자', '포디움 단골', '질주 본능', '컬렉터', '골드 러시', '우주 정복자', '초보 레이서', '포디움 단골'];
+
+  const ITEMS = [
+    { id: 'boost', icon: '🔥', label: 'N2O' },
+    { id: 'banana', icon: '🍌', label: '바나나' },
+    { id: 'water', icon: '💧', label: '물방울' },
+    { id: 'shield', icon: '🛡️', label: '실드' },
+    { id: 'missile', icon: '🚀', label: '미사일' },
+    { id: 'electric', icon: '⚡', label: '전기' }
+  ];
+
+  function spawnRacers() {
+    if (hasThree && scene) {
+      racers.forEach(r => { if (r.mesh) scene.remove(r.mesh.group); });
+    }
+    racers = [];
+    if (lobbyPreviewMesh && scene) {
+      scene.remove(lobbyPreviewMesh.group);
+      lobbyPreviewMesh = null;
+    }
+
+    const gridOffsets = [];
+    for (let i = 0; i < TOTAL_RACERS; i++) {
+      const row = Math.floor(i / 2);
+      const side = (i % 2 === 0) ? -3.2 : 3.2;
+      gridOffsets.push({ sampleOffset: -6 - row * 7, lateral: side });
+    }
+    for (let i = gridOffsets.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [gridOffsets[i], gridOffsets[j]] = [gridOffsets[j], gridOffsets[i]];
+    }
+
+    const configs = [];
+    configs.push({
+      name: saveData.nickname,
+      titleName: getTitleObj(saveData.selectedTitle).name,
+      isPlayer: true,
+      skinId: saveData.selectedSkin,
+      colorHex: saveData.selectedColor,
+      aiSpeed: 1.0,
+      grid: gridOffsets[0]
+    });
+
+    for (let i = 0; i < AI_NAMES.length; i++) {
+      configs.push({
+        name: AI_NAMES[i],
+        titleName: AI_TITLES[i % AI_TITLES.length],
+        isPlayer: false,
+        skinId: AI_SKINS[i % AI_SKINS.length],
+        colorHex: AI_COLORS[i],
+        aiSpeed: 0.86 + Math.random() * 0.12,
+        grid: gridOffsets[i + 1]
+      });
+    }
+
+    configs.forEach(cfg => {
+      const startIdx = (SAMPLES + cfg.grid.sampleOffset) % SAMPLES;
+      let pos = null, heading = 0, mesh = null;
+
+      if (hasThree && trackSamples[startIdx]) {
+        const startSample = trackSamples[startIdx];
+        pos = startSample.pt.clone().addScaledVector(startSample.right, cfg.grid.lateral);
+        heading = Math.atan2(-startSample.tan.x, -startSample.tan.z);
+        mesh = createVehicleMesh(cfg.skinId, cfg.colorHex);
+        mesh.group.position.copy(pos);
+        mesh.group.rotation.y = heading;
+        scene.add(mesh.group);
+      }
+
+      const r = {
+        ...cfg,
+        mesh,
+        pos,
+        heading,
+        speed: 0,
+        driftDir: 0,
+        boostGauge: 0,
+        boostTimer: 0,
+        shieldTimer: 0,
+        stunTimer: 0,
+        item: null,
+        lap: 1,
+        lastSampleIdx: startIdx,
+        progress: 0,
+        finished: false,
+        finishTime: 0
+      };
+      racers.push(r);
+      if (cfg.isPlayer) player = r;
+    });
+
+    const playerGridNum = gridOffsets.findIndex(g => g === player.grid) + 1;
+    showBanner(`🏁 무작위 출발 그리드 [${playerGridNum}번] 배치!`, '#fbbf24');
+  }
+
+  let bannerTimeout = null;
+  function showBanner(text, color = '#fff') {
+    const el = document.getElementById('event-banner');
+    el.textContent = text;
+    el.style.color = color;
+    el.style.opacity = '1';
+    clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1600);
+  }
+
+  let killTimeout = null;
+  function showKillFeed(text) {
+    const el = document.getElementById('kill-feed');
+    el.textContent = text;
+    el.style.opacity = '1';
+    clearTimeout(killTimeout);
+    killTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1000);
+  }
+
+  function getSkinLabel(skinId) {
+    if (skinId === 'default') return '🏎️ 기본 카트';
+    const found = SHOP_SKINS.find(s => s.id === skinId);
+    return found ? found.name : '🏎️ 기본 카트';
+  }
+
+  function getWrapInfo(colorHex) {
+    if (colorHex === 'gold_wrap') {
+      return {
+        label: '🥇 골드 랩',
+        style: 'background:linear-gradient(135deg, #fef9c3 0%, #fde047 50%, #facc15 100%);color:#713f12;text-shadow:none;',
+        sparkle: true
+      };
+    }
+    if (colorHex === 'silver_wrap') {
+      return {
+        label: '🥈 실버 랩',
+        style: 'background:linear-gradient(135deg, #ffffff 0%, #e5e7eb 55%, #cbd5e1 100%);color:#1e293b;text-shadow:none;',
+        sparkle: true
+      };
+    }
+    if (colorHex === 'rainbow') {
+      return {
+        label: '🌈 레인보우',
+        style: 'background:linear-gradient(135deg, red, orange, yellow, green, blue, purple);',
+        sparkle: true
+      };
+    }
+    const baseMap = {
+      '#ef4444': '레드',
+      '#3b82f6': '블루',
+      '#22c55e': '그린',
+      '#facc15': '옐로',
+      '#111827': '블랙',
+      '#f8fafc': '화이트',
+      '#6b7280': '그레이',
+      '#ec4899': '핑크',
+      '#f97316': '오렌지',
+      '#64748b': '슬레이트',
+      '#dc2626': '크림슨'
+    };
+    const lightText = colorHex === '#f8fafc' || colorHex === '#facc15';
+    return {
+      label: baseMap[colorHex] || colorHex,
+      style: `background:${colorHex};${lightText ? 'color:#0f172a;text-shadow:none;' : ''}`,
+      sparkle: false
+    };
+  }
+
+  function renderLineupShowcase() {
+    const grid = document.getElementById('lineup-grid');
+    grid.innerHTML = '';
+
+    racers.forEach((r, idx) => {
+      const wrap = getWrapInfo(r.colorHex);
+      const vehicleImgUrl = getVehicleImageURL(r.skinId, r.colorHex);
+      const card = document.createElement('div');
+      card.className = 'lineup-card' + (r.isPlayer ? ' me' : '');
+      card.innerHTML = `
+        <div style="font-size:10px;font-weight:900;color:${r.isPlayer ? '#fbbf24' : '#93c5fd'};">${r.isPlayer ? '★ ME' : `RIVAL #${idx}`}</div>
+        <div style="font-size:9px;font-weight:900;color:#fde047;background:rgba(251,191,36,0.16);padding:1px 6px;border-radius:6px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">[${r.titleName}]</div>
+        <div style="font-size:12px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${r.name}</div>
+        <div class="lineup-img-box ${wrap.sparkle ? 'sparkle-wrap' : ''}">
+          <img class="lineup-vehicle-img" src="${vehicleImgUrl}" alt="${r.name}" />
+        </div>
+        <div style="font-size:10px;font-weight:800;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${getSkinLabel(r.skinId)}</div>
+        <div class="lineup-wrap-pill ${wrap.sparkle ? 'sparkle-wrap' : ''}" style="${wrap.style}">${wrap.label}</div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function beginRaceCountdown() {
+    gameState = 'countdown';
+    updatePadVisibility();
+
+    const cdEl = document.getElementById('countdown');
+    cdEl.classList.remove('hidden');
+    let count = 3;
+    cdEl.textContent = count;
+    sfx.beep(false);
+
+    countdownInterval = setInterval(() => {
+      if (gameState !== 'countdown') {
+        clearInterval(countdownInterval);
+        cdEl.classList.add('hidden');
+        return;
+      }
+      count--;
+      if (count > 0) {
+        cdEl.textContent = count;
+        sfx.beep(false);
+      } else if (count === 0) {
+        cdEl.textContent = 'GO!';
+        sfx.beep(true);
+        gameState = 'racing';
+      } else {
+        cdEl.classList.add('hidden');
+        clearInterval(countdownInterval);
+      }
+    }, 850);
+  }
+
+  function startRace() {
+    try {
+      clearInterval(countdownInterval);
+      clearInterval(lineupInterval);
+      document.getElementById('start-screen').classList.add('hidden');
+      document.getElementById('track-screen').classList.add('hidden');
+      document.getElementById('result-screen').classList.add('hidden');
+      document.getElementById('hud').classList.remove('hidden');
+
+      syncViewportSize();
+      buildTrack3D(currentTrack);
+      spawnRacers();
+      updateItemHUD();
+
+      raceTime = 0;
+      gameState = 'lineup';
+      updatePadVisibility();
+
+      if (hasThree && player && player.pos) {
+        camera.position.set(
+          player.pos.x + Math.sin(player.heading) * 9.4,
+          player.pos.y + 4.5,
+          player.pos.z + Math.cos(player.heading) * 9.4
+        );
+        camera.lookAt(player.pos.x - Math.sin(player.heading) * 10, player.pos.y + 1.4, player.pos.z - Math.cos(player.heading) * 10);
+        camera.updateProjectionMatrix();
+        updateHUD();
+        renderer.render(scene, camera);
+      }
+
+      renderLineupShowcase();
+      const lineupEl = document.getElementById('lineup-screen');
+      const badgeEl = document.getElementById('lineup-timer-badge');
+      let lineupSec = 3;
+      badgeEl.textContent = `STARTING LINEUP · ${lineupSec}s`;
+      lineupEl.classList.remove('hidden');
+
+      lineupInterval = setInterval(() => {
+        if (gameState !== 'lineup') {
+          clearInterval(lineupInterval);
+          lineupEl.classList.add('hidden');
+          return;
+        }
+        lineupSec--;
+        if (lineupSec > 0) {
+          badgeEl.textContent = `STARTING LINEUP · ${lineupSec}s`;
+        } else {
+          clearInterval(lineupInterval);
+          lineupEl.classList.add('hidden');
+          beginRaceCountdown();
+        }
+      }, 1000);
+    } catch (err) {
+      showBanner('오류 발생: ' + err.message, '#f87171');
+    }
+  }
+
+  // ==========================================
+  // 9. 물리, 파티클, 무기 및 레이스 로직
+  // ==========================================
+  function resetKartToRoad(r) {
+    if (!hasThree || !trackSamples[r.lastSampleIdx]) return;
+    const s = trackSamples[r.lastSampleIdx];
+    r.pos.copy(s.pt);
+    r.heading = Math.atan2(-s.tan.x, -s.tan.z);
+    r.speed = 25;
+    r.driftDir = 0;
+    if (r.isPlayer) {
+      sfx.hit();
+      showBanner('🔄 즉시 도로 중앙 복귀!', '#7dd3fc');
+      const flash = document.getElementById('rewind-flash');
+      flash.style.opacity = '1';
+      setTimeout(() => { flash.style.opacity = '0'; }, 180);
+    }
+  }
+
+  function resolveEffectHex(colorHex, offset = 0) {
+    if (colorHex === 'rainbow') {
+      const hue = (((raceTime * 180) + offset) % 360) / 360;
+      return new THREE.Color().setHSL(hue, 1.0, 0.55).getHex();
+    }
+    if (colorHex === 'gold_wrap') return 0xfde047;
+    if (colorHex === 'silver_wrap') return 0xe5e7eb;
+    return parseInt(colorHex.replace('#', '0x'));
+  }
+
+  function spawnDriftEffect(r, isBoostBurst) {
+    if (!hasThree) return;
+    const fxColor = isBoostBurst ? resolveEffectHex(r.colorHex) : 0xe2e8f0;
+    const mat = new THREE.MeshBasicMaterial({ color: fxColor, transparent: true, opacity: 0.9 });
+    const mesh = new THREE.Mesh(isBoostBurst ? sharedSparkGeo : sharedSmokeGeo, mat);
+    mesh.position.set(
+      r.pos.x + Math.sin(r.heading) * 1.9 + (Math.random() - 0.5) * 1.2,
+      r.pos.y + 0.55 + Math.random() * 0.3,
+      r.pos.z + Math.cos(r.heading) * 1.9 + (Math.random() - 0.5) * 1.2
+    );
+    worldGroup.add(mesh);
+    particles.push({ mesh, mat, life: isBoostBurst ? 0.35 : 0.25, vy: isBoostBurst ? 2.4 : 1.4 });
+  }
+
+  function spawnSkidMark(r) {
+    if (!hasThree) return;
+    const rightX = Math.cos(r.heading);
+    const rightZ = -Math.sin(r.heading);
+    const backX = Math.sin(r.heading);
+    const backZ = Math.cos(r.heading);
+    const spread = r.skinId === 'skate' ? 0.32 : 0.95;
+    [-spread, spread].forEach(side => {
+      const mat = new THREE.MeshBasicMaterial({ color: 0x090d16, transparent: true, opacity: 0.55 });
+      const mesh = new THREE.Mesh(sharedSkidGeo, mat);
+      mesh.rotation.y = r.heading;
+      mesh.position.set(
+        r.pos.x + rightX * side + backX * 1.1,
+        r.pos.y + 0.08,
+        r.pos.z + rightZ * side + backZ * 1.1
+      );
+      worldGroup.add(mesh);
+      skidMarks.push({ mesh, mat, life: 2.2 });
+    });
+  }
+
+  function dropHazard(owner, type) {
+    if (!hasThree) return;
+    const backPos = owner.pos.clone().add(new THREE.Vector3(Math.sin(owner.heading) * 3.5, 0.45, Math.cos(owner.heading) * 3.5));
+    const geo = (type === 'banana') ? new THREE.ConeGeometry(0.75, 1.1, 8) : new THREE.SphereGeometry(0.8, 10, 10);
+    const mat = new THREE.MeshLambertMaterial({ color: (type === 'banana') ? 0xfacc15 : 0x38bdf8, transparent: true, opacity: 0.88 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(backPos);
+    worldGroup.add(mesh);
+    hazards.push({ mesh, pos: backPos, owner, type, life: 28 });
+  }
+
+  function usePlayerAction() {
+    if (!player || player.stunTimer > 0) return;
+
+    if (player.item) {
+      const it = player.item;
+      player.item = null;
+      updateItemHUD();
+
+      if (it.id === 'boost') {
+        player.boostTimer = 2.2;
+        sfx.boost();
+        showBanner('🔥 N2O 부스터 발동!', '#fb923c');
+      } else if (it.id === 'banana' || it.id === 'water') {
+        dropHazard(player, it.id);
+        sfx.itemGet();
+        showBanner(it.id === 'banana' ? '🍌 바나나 투하!' : '💧 물방울 설치!', '#facc15');
+      } else if (it.id === 'shield') {
+        player.shieldTimer = 4.5;
+        sfx.itemGet();
+        showBanner('🛡️ 4.5초 실드 가동!', '#38bdf8');
+      } else if (it.id === 'missile') {
+        const target = racers.find(other => !other.isPlayer && other.progress > player.progress);
+        if (target) {
+          if (target.shieldTimer <= 0) {
+            target.stunTimer = 1.0;
+            target.speed *= 0.2;
+            showKillFeed(`적 처치! (${target.name})`);
+          } else {
+            showBanner(`🛡️ ${target.name} 실드 방어!`, '#38bdf8');
+          }
+        }
+        sfx.boost();
+        showBanner('🚀 유도 미사일 발사!', '#f87171');
+      } else if (it.id === 'electric') {
+        let hitCount = 0;
+        racers.forEach(other => {
+          if (!other.isPlayer && other.shieldTimer <= 0) {
+            other.stunTimer = 1.2;
+            other.speed = 0;
+            hitCount++;
+          }
+        });
+        sfx.shock();
+        if (hitCount > 0) showKillFeed(`적 처치! (${hitCount}명 감전)`);
+        showBanner('⚡ 광역 전기 빔 발사!', '#fbbf24');
+      }
+      return;
+    }
+
+    if (player.boostGauge >= 100) {
+      player.boostGauge = 0;
+      player.boostTimer = 1.8;
+      sfx.boost();
+      showBanner('⚡ 순간 부스터!', '#38bdf8');
+    }
+  }
+
+  function updateItemHUD() {
+    const iconEl = document.getElementById('item-icon');
+    const labelEl = document.getElementById('item-label');
+    if (selectedMode === 'speed') {
+      iconEl.textContent = '⚡'; labelEl.textContent = 'SPEED'; return;
+    }
+    if (player && player.item) {
+      iconEl.textContent = player.item.icon; labelEl.textContent = player.item.label;
+    } else {
+      iconEl.textContent = '❓'; labelEl.textContent = 'EMPTY';
+    }
+  }
+
+  function findClosestSample(pos) {
+    let bestIdx = 0, bestDist = Infinity;
+    for (let i = 0; i < SAMPLES; i++) {
+      const d = pos.distanceToSquared(trackSamples[i].pt);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    return bestIdx;
+  }
+
+  function updateRacer(r, dt) {
+    if (!hasThree || !r.mesh || !r.pos) return;
+    if (r.shieldTimer > 0) r.shieldTimer -= dt;
+    r.mesh.shieldMesh.visible = r.shieldTimer > 0;
+
+    if (r.mesh.isRainbow) {
+      const hue = (raceTime * 90 + racers.indexOf(r) * 35) % 360;
+      r.mesh.bodyMat.color.setHSL(hue / 360, 1.0, 0.5);
+    }
+    if (r.mesh.wrapType) {
+      updateWrapShimmer(r.mesh, r.pos, raceTime + racers.indexOf(r), dt, worldGroup);
+    }
+
+    if (r.stunTimer > 0) {
+      r.stunTimer -= dt; r.speed = 0;
+      r.mesh.group.rotation.y += dt * Math.PI * 5;
+      return;
+    }
+
+    let steer = 0, accel = 0, drifting = false;
+
+    if (r.isPlayer && gameState === 'racing' && !r.finished) {
+      const left = keys['ArrowLeft'] || keys['KeyA'] || touchInput.left;
+      const right = keys['ArrowRight'] || keys['KeyD'] || touchInput.right;
+      const up = keys['ArrowUp'] || keys['KeyW'] || !document.getElementById('mobile-controls').classList.contains('hidden');
+      const down = keys['ArrowDown'] || keys['KeyS'] || touchInput.brake;
+      drifting = keys['ShiftLeft'] || keys['ShiftRight'] || touchInput.drift;
+
+      if (left) steer += 1;
+      if (right) steer -= 1;
+      accel = down ? -0.8 : (up ? 1.0 : 0.25);
+    } else {
+      const targetIdx = (r.lastSampleIdx + 12) % SAMPLES;
+      const targetPt = trackSamples[targetIdx].pt;
+      const desired = Math.atan2(-(targetPt.x - r.pos.x), -(targetPt.z - r.pos.z));
+      let diff = desired - r.heading;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      steer = Math.max(-1, Math.min(1, diff * 2.2));
+      accel = r.aiSpeed || 0.92;
+      if (Math.abs(diff) > 0.45) drifting = true;
+    }
+
+    if (r.boostTimer > 0) r.boostTimer -= dt;
+    const maxSpeed = (r.boostTimer > 0 ? 80 : 55) * (r.isPlayer ? 1 : (r.aiSpeed || 0.95));
+
+    if (accel > 0) r.speed += accel * (r.boostTimer > 0 ? 54 : 32) * dt;
+    else if (accel < 0) r.speed += accel * 42 * dt;
+    else r.speed *= Math.pow(0.45, dt);
+    r.speed = Math.max(-18, Math.min(maxSpeed, r.speed));
+
+    const skinTurnBonus = (r.skinId === 'skate' || r.skinId === 'bike' || r.skinId === 'ufo') ? 1.25 : 1.0;
+    if (drifting && Math.abs(steer) > 0.1 && r.speed > 26) {
+      r.driftDir = Math.sign(steer);
+      r.heading += steer * 2.45 * skinTurnBonus * currentTrack.grip * dt;
+      r.boostGauge = Math.min(100, r.boostGauge + 38 * dt);
+      if (Math.random() < 0.65) {
+        spawnSkidMark(r);
+        spawnDriftEffect(r, false);
+      }
+    } else {
+      if (r.driftDir !== 0 && r.speed > 30) {
+        r.speed = Math.min(maxSpeed + 10, r.speed + 9);
+        r.boostTimer = Math.max(r.boostTimer, 0.55);
+        for (let k = 0; k < 5; k++) spawnDriftEffect(r, true);
+        if (r.isPlayer && gameState === 'racing' && !r.finished) {
+          saveData.stats.totalDrifts += 1;
+          checkAndUnlockTitles(false);
+        }
+      }
+      r.driftDir = 0;
+      r.heading += steer * 1.85 * skinTurnBonus * currentTrack.grip * dt;
+    }
+
+    if (r.boostTimer > 0 && Math.random() < 0.75) {
+      spawnDriftEffect(r, true);
+    }
+
+    const vx = -Math.sin(r.heading) * r.speed;
+    const vz = -Math.cos(r.heading) * r.speed;
+    r.pos.x += vx * dt;
+    r.pos.z += vz * dt;
+
+    const idx = findClosestSample(r.pos);
+    const s = trackSamples[idx];
+    r.pos.y = THREE.MathUtils.lerp(r.pos.y, s.pt.y, 0.35);
+
+    const deltaIdx = idx - r.lastSampleIdx;
+    if (deltaIdx < -SAMPLES * 0.6) {
+      r.lap++;
+      if (r.isPlayer) {
+        if (r.lap > TOTAL_LAPS && !r.finished) {
+          r.finished = true; r.finishTime = raceTime;
+          sfx.finish(); finishRace();
+        } else if (r.lap <= TOTAL_LAPS) {
+          sfx.beep(true);
+          showBanner(`🏁 LAP ${r.lap} / ${TOTAL_LAPS}`, '#fbbf24');
+        }
+      } else if (r.lap > TOTAL_LAPS && !r.finished) {
+        r.finished = true; r.finishTime = raceTime;
+      }
+    } else if (deltaIdx > SAMPLES * 0.6) {
+      r.lap = Math.max(1, r.lap - 1);
+    }
+    r.lastSampleIdx = idx;
+    r.progress = (r.lap - 1) * SAMPLES + idx;
+
+    const relVec = r.pos.clone().sub(s.pt);
+    const lateral = relVec.dot(s.right);
+    if (Math.abs(lateral) > ROAD_HALF_WIDTH - 1.25) {
+      resetKartToRoad(r);
+    }
+
+    boostPads.forEach(pad => {
+      if (r.pos.distanceToSquared(pad.pos) < 16) {
+        if (r.boostTimer < 0.8 && r.isPlayer) sfx.boost();
+        r.boostTimer = Math.max(r.boostTimer, 1.4);
+      }
+    });
+
+    if (selectedMode === 'item') {
+      itemBoxes.forEach(box => {
+        if (box.cooldown <= 0 && r.pos.distanceToSquared(box.pos) < 10) {
+          box.cooldown = 3.5; box.mesh.visible = false;
+          if (!r.item) {
+            r.item = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+            if (r.isPlayer) { sfx.itemGet(); updateItemHUD(); }
+          }
+          if (!r.isPlayer && r.item) {
+            if (r.item.id === 'banana' || r.item.id === 'water') dropHazard(r, r.item.id);
+            else r.boostTimer = 1.5;
+            r.item = null;
+          }
+        }
+      });
+    }
+
+    for (let i = hazards.length - 1; i >= 0; i--) {
+      const h = hazards[i];
+      if (h.owner === r && h.life > 27) continue;
+      if (r.pos.distanceToSquared(h.pos) < 6.5) {
+        worldGroup.remove(h.mesh);
+        hazards.splice(i, 1);
+        if (r.shieldTimer <= 0) {
+          r.stunTimer = 1.0; r.speed = 0;
+          if (h.owner && h.owner.isPlayer && !r.isPlayer) {
+            showKillFeed(`적 처치! (${r.name})`);
+          }
+          if (r.isPlayer) {
+            sfx.hit();
+            showBanner(h.type === 'banana' ? '🍌 바나나 피격! (1초 정지)' : '💧 물방울 피격! (1초 정지)', '#facc15');
+          }
+        } else if (r.isPlayer) {
+          showBanner('🛡️ 실드로 방어!', '#38bdf8');
+        }
+      }
+    }
+
+    r.mesh.group.position.copy(r.pos);
+    r.mesh.group.rotation.y = r.heading + r.driftDir * 0.22;
+    r.mesh.flameL.visible = r.boostTimer > 0;
+    r.mesh.flameR.visible = r.boostTimer > 0;
+    r.mesh.wheels.forEach(w => { w.rotation.x -= r.speed * dt * 0.45; });
+    animateSkater(r.mesh, r.speed, r.driftDir, dt);
+    animateUfo(r.mesh, r.speed, r.driftDir, dt);
+  }
+
+  function finishRace() {
+    gameState = 'finished';
+    updatePadVisibility();
+
+    const unfinished = racers
+      .filter(r => !r.finished)
+      .sort((a, b) => b.progress - a.progress);
+    unfinished.forEach((r, i) => {
+      r.finished = true;
+      r.finishTime = raceTime + (i + 1) * 1.45;
+    });
+
+    const sorted = [...racers].sort((a, b) => a.finishTime - b.finishTime);
+    const myRank = sorted.findIndex(r => r.isPlayer) + 1;
+
+    saveData.stats.totalRaces += 1;
+    if (myRank === 1) saveData.stats.wins1st += 1;
+    if (myRank <= 3) saveData.stats.podiums += 1;
+
+    let reward = 0;
+    if (myRank === 1) reward = 50;
+    else if (myRank === 2) reward = 30;
+    else if (myRank === 3) reward = 10;
+    else if (myRank === 10) reward = -10;
+
+    saveData.gold = Math.max(0, saveData.gold + reward);
+    const unlockedAfterRace = checkAndUnlockTitles(true);
+    writeSaveData();
+
+    const equippedTitleName = getTitleObj(saveData.selectedTitle).name;
+    if (player) player.titleName = equippedTitleName;
+
+    document.getElementById('result-title').textContent = `${myRank}위로 완주!`;
+    document.getElementById('result-track-name').textContent = `${currentTrack.name} · ${selectedMode === 'item' ? '아이템전' : '스피드전'}`;
+    const titleRewardText = unlockedAfterRace.length > 0
+      ? ` · 🏅 새 칭호 획득: ${unlockedAfterRace.map(t => `[${t.name}]`).join(', ')}`
+      : '';
+    document.getElementById('result-reward').textContent = (reward >= 0 ? `🪙 보상 골드: +${reward} G` : `🪙 페널티: ${reward} G`) + titleRewardText;
+
+    const listEl = document.getElementById('result-list');
+    listEl.innerHTML = '';
+    sorted.forEach((r, idx) => {
+      const row = document.createElement('div');
+      row.className = 'result-row' + (r.isPlayer ? ' me' : '');
+      const imgUrl = getVehicleImageURL(r.skinId, r.colorHex);
+      row.innerHTML = `
+        <div class="result-racer-info">
+          <span style="min-width:34px;font-weight:900;color:${idx === 0 ? '#fbbf24' : '#93c5fd'};">${idx + 1}위</span>
+          <img class="result-mini-img" src="${imgUrl}" alt="${r.name}" />
+          <div>
+            <span class="title-badge-inline">[${r.titleName}]</span>
+            <span>${r.name}</span>
+          </div>
+        </div>
+        <span style="color:#7dd3fc;font-weight:900;">${formatTime(r.finishTime)}</span>
+      `;
+      listEl.appendChild(row);
+    });
+
+    document.getElementById('result-screen').classList.remove('hidden');
+  }
+
+  function formatTime(sec) {
+    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+    const s = String(Math.floor(sec % 60)).padStart(2, '0');
+    const ms = String(Math.floor((sec % 1) * 100)).padStart(2, '0');
+    return `${m}:${s}.${ms}`;
+  }
+
+  const miniCanvas = document.getElementById('minimap');
+  const miniCtx = miniCanvas.getContext('2d');
+
+  function updateHUD() {
+    if (!player || trackSamples.length === 0) return;
+    const sorted = [...racers].sort((a, b) => b.progress - a.progress);
+    const rank = sorted.findIndex(r => r.isPlayer) + 1;
+    const equippedTitleName = getTitleObj(saveData.selectedTitle).name;
+
+    document.getElementById('hud-rank').innerHTML = `${rank}<span>/10</span>`;
+    document.getElementById('hud-nick').textContent = `[${equippedTitleName}] ${saveData.nickname} · LAP ${Math.min(player.lap, TOTAL_LAPS)}/${TOTAL_LAPS}`;
+    document.getElementById('hud-time').textContent = formatTime(raceTime);
+    document.getElementById('hud-speed').textContent = Math.round(Math.abs(player.speed) * 3.4);
+    document.getElementById('boost-gauge').style.width = `${player.boostGauge}%`;
+
+    miniCtx.clearRect(0, 0, 104, 104);
+    const xs = trackSamples.map(s => s.pt.x), zs = trackSamples.map(s => s.pt.z);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+    const span = Math.max(maxX - minX, maxZ - minZ, 1);
+    const toMini = (x, z) => [12 + ((x - minX) / span) * 80, 12 + ((z - minZ) / span) * 80];
+
+    miniCtx.beginPath();
+    trackSamples.forEach((s, i) => {
+      const [mx, mz] = toMini(s.pt.x, s.pt.z);
+      if (i === 0) miniCtx.moveTo(mx, mz); else miniCtx.lineTo(mx, mz);
+    });
+    miniCtx.closePath();
+    miniCtx.strokeStyle = 'rgba(255,255,255,0.45)'; miniCtx.lineWidth = 3.5; miniCtx.stroke();
+
+    racers.forEach(r => {
+      if (!r.pos) return;
+      const [mx, mz] = toMini(r.pos.x, r.pos.z);
+      miniCtx.beginPath();
+      miniCtx.arc(mx, mz, r.isPlayer ? 4.2 : 2.6, 0, Math.PI * 2);
+      miniCtx.fillStyle = r.isPlayer ? '#fbbf24' : '#38bdf8';
+      miniCtx.fill();
+    });
+  }
+
+  buildTrack3D(currentTrack);
+  rebuildLobbyPreview();
+
+  let lastTime = performance.now();
+  function animate(now) {
+    requestAnimationFrame(animate);
+    if (!hasThree || !renderer || !scene || !camera) return;
+
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+    lastTime = now;
+
+    if (gameState === 'menu' && lobbyPreviewMesh) {
+      lobbyPreviewMesh.group.rotation.y += dt * 0.8;
+      if (lobbyPreviewMesh.isRainbow) {
+        const hue = ((now * 0.08) % 360) / 360;
+        lobbyPreviewMesh.bodyMat.color.setHSL(hue, 1.0, 0.5);
+      }
+      if (lobbyPreviewMesh.wrapType) {
+        updateWrapShimmer(lobbyPreviewMesh, lobbyPreviewMesh.group.position, now * 0.001, dt, worldGroup);
+      }
+      if (lobbyPreviewMesh.skaterAnim) {
+        animateSkater(lobbyPreviewMesh, 22, 0, dt);
+      }
+      if (lobbyPreviewMesh.ufoAnim) {
+        animateUfo(lobbyPreviewMesh, 22, 0, dt);
+      }
+      const pPos = lobbyPreviewMesh.group.position;
+      camera.position.set(pPos.x + 6, pPos.y + 3.4, pPos.z + 6);
+      camera.lookAt(pPos.x, pPos.y + 1.2, pPos.z);
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const pt = particles[i];
+      pt.life -= dt;
+      pt.mesh.position.y += pt.vy * dt;
+      if (pt.isTwinkle) {
+        const ratio = Math.max(0, pt.life / pt.maxLife);
+        const twinkleScale = Math.sin(ratio * Math.PI) * 1.35;
+        pt.mesh.scale.setScalar(Math.max(0.01, twinkleScale));
+        pt.mesh.rotation.y += dt * 8;
+        pt.mat.opacity = ratio;
+      } else {
+        pt.mat.opacity = Math.max(0, pt.life * 2.8);
+      }
+      if (pt.life <= 0) {
+        (pt.parentGroup || worldGroup).remove(pt.mesh);
+        pt.mat.dispose();
+        particles.splice(i, 1);
+      }
+    }
+
+    if (gameState === 'racing') raceTime += dt;
+
+    if (gameState === 'lineup' || gameState === 'racing' || gameState === 'countdown' || gameState === 'finished') {
+      itemBoxes.forEach(b => {
+        b.mesh.rotation.y += dt * 2.2;
+        if (b.cooldown > 0) {
+          b.cooldown -= dt;
+          if (b.cooldown <= 0) b.mesh.visible = true;
+        }
+      });
+
+      for (let i = hazards.length - 1; i >= 0; i--) {
+        hazards[i].life -= dt;
+        if (hazards[i].life <= 0) { worldGroup.remove(hazards[i].mesh); hazards.splice(i, 1); }
+      }
+
+      for (let i = skidMarks.length - 1; i >= 0; i--) {
+        const sk = skidMarks[i];
+        sk.life -= dt;
+        sk.mat.opacity = Math.max(0, sk.life * 0.25);
+        if (sk.life <= 0) {
+          worldGroup.remove(sk.mesh);
+          sk.mat.dispose();
+          skidMarks.splice(i, 1);
+        }
+      }
+
+      if (gameState === 'racing' || gameState === 'finished') {
+        racers.forEach(r => updateRacer(r, dt));
+      } else if (gameState === 'countdown' || gameState === 'lineup') {
+        racers.forEach(r => {
+          if (r.mesh && r.mesh.wrapType && r.pos) {
+            updateWrapShimmer(r.mesh, r.pos, now * 0.001 + racers.indexOf(r), dt, worldGroup);
+          }
+          if (r.mesh && r.mesh.ufoAnim) {
+            animateUfo(r.mesh, 0, 0, dt);
+          }
+        });
+      }
+
+      if (player && player.pos) {
+        const camDist = player.boostTimer > 0 ? 11.2 : 9.4;
+        const targetCamPos = new THREE.Vector3(
+          player.pos.x + Math.sin(player.heading) * camDist,
+          player.pos.y + 4.5,
+          player.pos.z + Math.cos(player.heading) * camDist
+        );
+        camera.position.lerp(targetCamPos, 0.16);
+        camera.lookAt(player.pos.x - Math.sin(player.heading) * 10, player.pos.y + 1.4, player.pos.z - Math.cos(player.heading) * 10);
+        camera.fov = THREE.MathUtils.lerp(camera.fov, player.boostTimer > 0 ? 74 : 62, 0.12);
+        camera.updateProjectionMatrix();
+      }
+
+      updateHUD();
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
